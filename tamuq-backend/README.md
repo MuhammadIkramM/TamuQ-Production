@@ -454,7 +454,7 @@ Alur autentikasi:
 
 > **⚠️ Hak Cipta Dilindungi Undang-Undang**
 
-Source code backend service ini merupakan bagian integral dari **Sistem TamuQ — Smart Library Guestbook & Management System**, sebuah karya cipta intelektual yang dikembangkan oleh tim pengembang **Jurusan Teknik Informatika dan Komputer (JTIK), Universitas Negeri Makassar (UNM)**.
+Source code backend service ini merupakan bagian integral dari **Sistem TamuQ — Smart Library Guestbook & Management System**, sebuah karya cipta intelektual yang dikembangkan oleh Muhammad Ikram Muslimin, Mahasiswa **Jurusan Teknik Informatika dan Komputer (JTIK), Universitas Negeri Makassar (UNM)**.
 
 Sistem ini telah **terdaftar secara resmi sebagai Program Komputer** di **Direktorat Jenderal Kekayaan Intelektual (DJKI), Kementerian Hukum dan HAM Republik Indonesia**.
 
