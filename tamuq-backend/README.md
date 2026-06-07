@@ -463,7 +463,7 @@ Segala bentuk reproduksi, distribusi, modifikasi, atau penggunaan komersial atas
 ---
 
 <p align="center">
-  Dikembangkan dengan ❤️ oleh Tim Pengembang JTIK UNM
+    Dikembangkan oleh Muhammad Ikram Muslimin.
   <br>
   <em>© 2024–2026 TamuQ System. All Rights Reserved.</em>
 </p>
