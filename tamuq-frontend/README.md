@@ -356,7 +356,7 @@ Untuk laporan bug atau saran fitur dalam lingkup internal, silakan buka *Issue* 
 ╚══════════════════════════════════════════════════════════════════╝
 ```
 
-**© 2024 TamuQ — Dikembangkan oleh Muhammad Ikram M.**
+**© 2024 TamuQ — Dikembangkan oleh Muhammad Ikram Muslimin.**
 
 Sistem ini merupakan karya intelektual yang telah terdaftar secara resmi sebagai **Program Komputer** di Direktorat Jenderal Kekayaan Intelektual (DJKI), Kementerian Hukum dan HAM Republik Indonesia.
 
@@ -374,7 +374,7 @@ Seluruh kode sumber, desain antarmuka, alur sistem, dan aset visual yang terdapa
 
 <div align="center">
 
-**Dibuat dengan ❤️ untuk digitalisasi perpustakaan kampus Indonesia**
+**Scan. Track. Manage.**
 
 <br/>
 
