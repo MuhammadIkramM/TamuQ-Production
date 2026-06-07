@@ -1,0 +1,13 @@
+# robots.txt – TamuQ (https://tamuq.my.id)
+# Diperbarui: 2026
+
+User-agent: *
+Allow: /
+
+# Blokir halaman dashboard/admin dari indeks publik (sesuaikan path jika berbeda)
+Disallow: /dashboard/
+Disallow: /admin/
+Disallow: /api/
+
+# Sitemap
+Sitemap: https://tamuq.my.id/sitemap.xml

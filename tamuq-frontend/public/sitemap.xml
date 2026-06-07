@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+
+  <!-- Halaman Utama -->
+  <url>
+    <loc>https://tamuq.my.id/</loc>
+    <lastmod>2026-05-07</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="id" href="https://tamuq.my.id/" />
+  </url>
+
+  <!-- Halaman Login -->
+  <url>
+    <loc>https://tamuq.my.id/login</loc>
+    <lastmod>2026-05-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Halaman Buku Tamu / Registrasi Kunjungan -->
+  <url>
+    <loc>https://tamuq.my.id/buku-tamu</loc>
+    <lastmod>2026-05-07</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Halaman Peminjaman Buku -->
+  <url>
+    <loc>https://tamuq.my.id/peminjaman</loc>
+    <lastmod>2026-05-07</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Halaman Surat Bebas Pustaka -->
+  <url>
+    <loc>https://tamuq.my.id/bebas-pustaka</loc>
+    <lastmod>2026-05-07</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Halaman Tentang / Informasi Sistem -->
+  <url>
+    <loc>https://tamuq.my.id/tentang</loc>
+    <lastmod>2026-05-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+</urlset>
