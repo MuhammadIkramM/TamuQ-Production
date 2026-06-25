@@ -1,0 +1,57 @@
+<IfModule mod_rewrite.c>
+    <IfModule mod_negotiation.c>
+        Options -MultiViews -Indexes
+    </IfModule>
+
+    RewriteEngine On
+
+    # Handle Authorization Header
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # =====================================================
+    # PRIORITY 1: /api/* → Laravel (index.php) — ALWAYS
+    # =====================================================
+    RewriteCond %{REQUEST_URI} ^/api(/.*)?$ [NC]
+    RewriteRule ^ index.php [L]
+
+    # =====================================================
+    # PRIORITY 2: /sanctum/* → Laravel (index.php) — ALWAYS
+    # =====================================================
+    RewriteCond %{REQUEST_URI} ^/sanctum(/.*)?$ [NC]
+    RewriteRule ^ index.php [L]
+
+    # =====================================================
+    # PRIORITY 3: Existing static files/dirs → serve directly
+    # (assets/, favicon.ico, robots.txt, etc.)
+    # =====================================================
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # =====================================================
+    # PRIORITY 4: Everything else → Vue SPA (index.html)
+    # =====================================================
+    RewriteRule ^ index.html [L]
+</IfModule>
+
+# Security headers
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+</IfModule>
+
+# Prevent directory listing
+Options -Indexes
+
+# Block access to hidden files (except .htaccess itself)
+<FilesMatch "^\.(?!htaccess)">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
