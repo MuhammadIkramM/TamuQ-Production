@@ -10,16 +10,26 @@
         <p class="text-gray-500 text-sm mt-1">Pantau status peminjaman dan riwayat bacaan Anda.</p>
       </div>
 
-      <div class="relative w-full sm:w-80">
-        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <MagnifyingGlassIcon class="w-5 h-5 text-gray-400" />
+      <div class="flex items-center gap-3">
+        <button
+          @click="openQrModal"
+          class="flex items-center gap-2 px-4 py-2.5 bg-[#F26430] hover:bg-[#D65020] text-white rounded-xl transition-all text-sm font-bold shadow-md shadow-[#F26430]/20 active:scale-95"
+        >
+          <QrCodeIcon class="w-5 h-5" />
+          Pinjam Buku via QR
+        </button>
+
+        <div class="relative w-full sm:w-80">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <MagnifyingGlassIcon class="w-5 h-5 text-gray-400" />
+          </div>
+          <input 
+            type="text" 
+            v-model="searchQuery" 
+            class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00555A] focus:border-[#00555A] text-sm outline-none transition-all shadow-sm"
+            placeholder="Cari judul buku yang dipinjam / riwayat..."
+          />
         </div>
-        <input 
-          type="text" 
-          v-model="searchQuery" 
-          class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00555A] focus:border-[#00555A] text-sm outline-none transition-all shadow-sm"
-          placeholder="Cari judul buku yang dipinjam / riwayat..."
-        />
       </div>
     </div>
 
@@ -148,16 +158,125 @@
 
       </div>
     </div>
+
+    <!-- Modal QR Peminjaman Buku -->
+    <transition name="fade">
+      <div v-if="showQrModal" class="fixed inset-0 flex items-center justify-center z-50 bg-[#00282a]/50 backdrop-blur-sm p-4" @click.self="closeQrModal">
+        <div class="bg-white shadow-2xl rounded-3xl w-full max-w-md overflow-hidden transform transition-all scale-100 relative">
+          
+          <!-- Tombol X -->
+          <button @click="closeQrModal" class="absolute top-4 right-4 z-30 text-gray-400 hover:text-gray-600 bg-white/80 backdrop-blur-sm rounded-full p-1 transition-colors">
+            <XMarkIcon class="w-6 h-6" />
+          </button>
+
+          <!-- Gradient bar -->
+          <div class="h-2 bg-gradient-to-r from-[#F26430] to-[#00555A] w-full"></div>
+
+          <div class="p-8 flex flex-col items-center text-center space-y-8">
+            
+            <!-- Header -->
+            <div class="text-center">
+              <h2 class="text-xl font-bold text-[#00555A] flex items-center justify-center gap-2">
+                <QrCodeIcon class="w-5 h-5 text-[#F26430]" />
+                QR Peminjaman Buku
+              </h2>
+              <p class="text-gray-500 text-xs mt-1">Tunjukkan QR ini ke staff saat meminjam buku.</p>
+            </div>
+
+            <!-- Jam & Tanggal -->
+            <div class="space-y-1">
+              <h1 class="text-5xl font-black tracking-tight text-[#00555A] font-mono">
+                {{ qrTime }}
+              </h1>
+              <p class="text-gray-500 font-medium uppercase tracking-widest text-xs">
+                {{ qrFormattedDate }}
+              </p>
+            </div>
+
+            <!-- QR Code Area -->
+            <div class="relative">
+              <div class="absolute -inset-4 border-2 border-dashed border-gray-200 rounded-xl"></div>
+              
+              <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 relative z-10">
+                <div v-if="qrValue" class="relative">
+                  <qrcode-vue 
+                    :value="qrValue" 
+                    :size="qrSize" 
+                    level="H" 
+                    render-as="svg"
+                    foreground="#1f2937" 
+                    :class="{'blur-sm': qrExpired}"
+                    class="transition-all duration-300"
+                  />
+                  <!-- Overlay saat expired -->
+                  <div v-if="qrExpired" class="absolute inset-0 flex items-center justify-center z-20">
+                    <button 
+                      @click="regenerateQr"
+                      class="px-4 py-2 bg-[#F26430] hover:bg-[#D65020] text-white text-sm font-bold rounded-xl shadow-lg transition-all active:scale-95 flex items-center gap-2"
+                    >
+                      <ArrowPathIcon class="w-4 h-4" />
+                      Generate ulang QR?
+                    </button>
+                  </div>
+                </div>
+                <div v-else class="flex items-center justify-center" :style="{ width: qrSize + 'px', height: qrSize + 'px' }">
+                    <ArrowPathIcon class="w-8 h-8 text-gray-300 animate-spin" />
+                </div>
+              </div>
+
+              <!-- FIX: Dot dekoratif hanya tampil saat QR aktif (bukan saat expired) -->
+              <div 
+                v-if="!qrExpired"
+                class="absolute inset-0 flex items-center justify-center pointer-events-none z-20"
+              >
+                 <div class="bg-white p-1 rounded-full shadow-sm">
+                   <div class="w-2 h-2 bg-[#F26430] rounded-full animate-pulse"></div>
+                 </div>
+              </div>
+            </div>
+
+            <!-- Countdown -->
+            <div 
+              class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-colors duration-300"
+              :class="qrExpired
+                ? 'bg-red-50 text-red-600'
+                : (qrCountdown <= 5 
+                  ? 'bg-red-50 text-red-600 animate-bounce' 
+                  : 'bg-[#F26430]/10 text-[#00555A]')"
+            >
+              <ArrowPathIcon class="w-4 h-4" :class="{'animate-spin': qrIsRefreshing}" />
+              <span v-if="qrIsRefreshing">Mengambil QR...</span>
+              <span v-else-if="qrExpired">QR kadaluarsa</span>
+              <span v-else>Berlaku {{ qrCountdown }}s</span>
+            </div>
+
+            <div v-if="qrErrorMessage" class="text-red-500 text-xs mt-2 px-4 py-1 bg-red-50 rounded-lg border border-red-100">
+               {{ qrErrorMessage }}
+            </div>
+
+          </div>
+
+          <div class="bg-[#EBF2FA] p-4 text-center border-t border-gray-100">
+            <p class="text-xs text-gray-500 flex items-center justify-center gap-1">
+              <LightBulbIcon class="w-3 h-3 text-[#F26430]" />
+              Pastikan kecerahan layar HP maksimum
+            </p>
+          </div>
+        </div>
+      </div>
+    </transition>
+
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
+import QrcodeVue from "qrcode.vue";
 import api from '@/api';
 import { 
   BookOpenIcon, BookmarkSquareIcon, ArchiveBoxIcon, CalendarDaysIcon,
   ExclamationCircleIcon, ExclamationTriangleIcon, CheckCircleIcon, ArrowLongRightIcon, ArrowLongLeftIcon,
-  MagnifyingGlassIcon, ClockIcon
+  MagnifyingGlassIcon, ClockIcon, QrCodeIcon, ArrowPathIcon, LightBulbIcon, XMarkIcon
 } from "@heroicons/vue/24/outline";
 
 const peminjamanAktif = ref([]);
@@ -195,5 +314,111 @@ const filteredRiwayat = computed(() => {
   );
 });
 
+// ========== QR Modal State ==========
+const showQrModal = ref(false);
+const qrTime = ref("");
+const qrFormattedDate = ref("");
+const qrCountdown = ref(30);
+const qrValue = ref("");
+const qrIsRefreshing = ref(false);
+const qrErrorMessage = ref("");
+const qrExpired = ref(false);
+
+let qrTimerInterval = null;
+let qrCountdownInterval = null;
+
+const qrSize = computed(() => {
+  if (typeof window !== 'undefined' && window.innerWidth < 380) return 180;
+  return 200;
+});
+
+const updateQrTime = () => {
+  const now = new Date();
+  qrTime.value = now.toLocaleTimeString("id-ID", { 
+    hour: "2-digit", minute: "2-digit", second: "2-digit"
+  }).replace(/\./g, ":");
+
+  qrFormattedDate.value = now.toLocaleDateString("id-ID", {
+    weekday: "long", day: "numeric", month: "short", year: "numeric",
+  });
+};
+
+const fetchQrCode = async () => {
+    if (qrIsRefreshing.value) return;
+
+    try {
+        qrIsRefreshing.value = true;
+        qrErrorMessage.value = "";
+        qrExpired.value = false;
+        
+        const response = await api.get('/qr/generate');
+        
+        qrValue.value = response.data.qr_code;
+        qrCountdown.value = response.data.expires_in || 30;
+        
+    } catch (error) {
+        console.error("Error Fetching QR:", error);
+        
+        if (error.response && error.response.data) {
+            qrErrorMessage.value = error.response.data.message || "Terjadi kesalahan server.";
+        } else {
+            qrErrorMessage.value = "Gagal terhubung ke server.";
+        }
+        
+        qrCountdown.value = 10;
+    } finally {
+        qrIsRefreshing.value = false;
+    }
+};
+
+const startQrTimer = () => {
+  updateQrTime();
+  fetchQrCode();
+  
+  qrTimerInterval = setInterval(updateQrTime, 1000);
+
+  qrCountdownInterval = setInterval(() => {
+    if (qrCountdown.value > 0) {
+        qrCountdown.value--;
+    } else {
+        qrExpired.value = true;
+    }
+  }, 1000);
+};
+
+const stopQrTimer = () => {
+  if (qrTimerInterval) { clearInterval(qrTimerInterval); qrTimerInterval = null; }
+  if (qrCountdownInterval) { clearInterval(qrCountdownInterval); qrCountdownInterval = null; }
+};
+
+const regenerateQr = () => {
+  qrExpired.value = false;
+  fetchQrCode();
+};
+
+const openQrModal = () => {
+  showQrModal.value = true;
+  qrValue.value = "";
+  qrCountdown.value = 30;
+  qrExpired.value = false;
+  qrErrorMessage.value = "";
+  startQrTimer();
+};
+
+const closeQrModal = () => {
+  showQrModal.value = false;
+  stopQrTimer();
+  qrValue.value = "";
+};
+
 onMounted(fetchUserBooks);
+
+onUnmounted(() => {
+  stopQrTimer();
+});
 </script>
+
+<style scoped>
+.fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
+</style>

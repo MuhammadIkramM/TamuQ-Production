@@ -71,6 +71,9 @@
           <thead class="sticky top-0 z-10 shadow-sm">
             <tr class="bg-[#66999C] text-white text-xs uppercase tracking-wider font-semibold">
               <th class="px-6 py-3">Kode Buku</th>
+              <th class="px-3 py-3 text-center w-14">
+                <QrCodeIcon class="w-4 h-4 text-white/70 mx-auto" />
+              </th>
               <th class="px-6 py-3">Judul Buku</th>
               <th class="px-6 py-3">Kategori</th>
               <th class="px-6 py-3">Penulis</th>
@@ -83,6 +86,24 @@
           <tbody class="divide-y divide-gray-50">
             <tr v-for="buku in filteredKatalog" :key="buku.id_buku" class="hover:bg-gray-50 transition-colors">
               <td class="px-6 py-3 text-sm font-mono text-gray-600">{{ buku.kode_buku || '-' }}</td>
+              <td class="px-3 py-3 text-center">
+                <!-- CHANGED: Removed hover blur+download overlay from table QR. Click only opens preview. -->
+                <div 
+                  v-if="buku.kode_buku" 
+                  class="inline-block cursor-pointer"
+                  @click="openQrPreview(buku.kode_buku)"
+                  title="Klik untuk pratinjau QR"
+                >
+                  <qrcode-vue 
+                    :value="buku.kode_buku" 
+                    :size="36" 
+                    level="H" 
+                    render-as="svg"
+                    foreground="#1f2937"
+                  />
+                </div>
+                <span v-else class="text-gray-300">—</span>
+              </td>
               <td class="px-6 py-3 text-sm font-medium text-gray-800">{{ buku.judul }}</td>
               <td class="px-6 py-3 text-sm text-gray-500">
                 <span v-if="buku.kategori" class="px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-600 border border-gray-200">
@@ -117,7 +138,7 @@
                 </td>
             </tr>
             <tr v-if="filteredKatalog.length === 0">
-              <td colspan="8" class="px-6 py-8 text-center text-gray-400 text-sm">
+              <td colspan="9" class="px-6 py-8 text-center text-gray-400 text-sm">
                 {{ searchKatalog ? 'Buku tidak ditemukan.' : 'Belum ada data buku.' }}
               </td>
             </tr>
@@ -275,6 +296,8 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal Form Peminjaman -->
     <transition name="fade">
       <div v-if="showPinjamModal" class="fixed inset-0 flex items-center justify-center z-50 bg-[#00282a]/50 backdrop-blur-sm p-4" @click.self="cancelPinjam">
         <div class="bg-white shadow-2xl rounded-2xl w-full max-w-md overflow-visible transform transition-all scale-100">
@@ -339,7 +362,7 @@
                      autocomplete="off"
                    />
                    <div v-if="selectedBookId" class="absolute right-3 top-2.5 text-[#00555A]">
-                       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
+                       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
                    </div>
                </div>
 
@@ -390,6 +413,7 @@
 
     <div v-if="showUserDropdown || showBookDropdown" @click="closeDropdowns" class="fixed inset-0 z-40 bg-transparent"></div>
 
+    <!-- Modal Tambah/Edit Buku -->
     <transition name="fade">
       <div v-if="showBookModal" class="fixed inset-0 flex items-center justify-center z-50 bg-[#00282a]/50 backdrop-blur-sm p-4" @click.self="cancelBook">
         <div class="bg-white shadow-2xl rounded-2xl w-full max-w-md overflow-hidden transform transition-all scale-100">
@@ -451,6 +475,7 @@
       </div>
     </transition>
 
+    <!-- Alert/Confirm Modal -->
     <transition name="fade">
       <div v-if="alertState.show" class="fixed inset-0 flex items-center justify-center z-[100] bg-[#00282a]/40 backdrop-blur-sm p-4">
         <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center transform transition-all scale-100 border-t-4"
@@ -493,6 +518,161 @@
       </div>
     </transition>
 
+    <!-- QR Preview Modal -->
+    <!-- CHANGED: Hover pada QR besar memunculkan blur + tombol download -->
+    <transition name="fade">
+      <div v-if="showQrPreview" class="fixed inset-0 flex items-center justify-center z-50 bg-[#00282a]/50 backdrop-blur-sm p-4" @click.self="closeQrPreview">
+        <div class="bg-white shadow-2xl rounded-2xl p-8 max-w-sm w-full text-center relative">
+          <button @click="closeQrPreview" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition">
+            <XMarkIcon class="w-6 h-6" />
+          </button>
+          <h3 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-1">QR Label Buku</h3>
+          <p class="text-xs text-gray-400 mb-6">Arahkan kursor untuk mengunduh</p>
+          <!-- Hover di sini: blur QR + muncul tombol download -->
+          <div 
+            class="relative inline-block group/preview cursor-pointer" 
+            data-qr-container
+          >
+            <qrcode-vue 
+              :value="previewKodeBuku" 
+              :size="220" 
+              level="H" 
+              render-as="svg"
+              foreground="#1f2937"
+              class="transition-all duration-200 group-hover/preview:blur-sm"
+            />
+            <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover/preview:opacity-100 transition-opacity z-10">
+              <button 
+                @click.stop="downloadQrPng(previewKodeBuku, $event)" 
+                class="px-4 py-2 bg-white/90 rounded-xl shadow-md hover:bg-white transition flex items-center gap-2 text-sm font-bold text-[#00555A]"
+              >
+                <ArrowDownTrayIcon class="w-5 h-5" />
+                Download PNG
+              </button>
+            </div>
+          </div>
+          <p class="mt-5 font-mono font-bold text-[#00555A] text-xl">{{ previewKodeBuku }}</p>
+        </div>
+      </div>
+    </transition>
+
+    <!-- Mode Selection Modal -->
+    <transition name="fade">
+      <div v-if="showModeModal" class="fixed inset-0 flex items-center justify-center z-50 bg-[#00282a]/50 backdrop-blur-sm p-4" @click.self="showModeModal = false">
+        <div class="bg-white shadow-2xl rounded-2xl w-full max-w-md overflow-hidden">
+          <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-2xl">
+            <h3 class="text-lg font-bold text-[#00555A]">Pilih Mode Input</h3>
+            <button @click="showModeModal = false" class="text-gray-400 hover:text-gray-600"><XMarkIcon class="w-6 h-6" /></button>
+          </div>
+          <div class="p-6 grid grid-cols-2 gap-4">
+            <button @click="openManualMode" class="p-6 rounded-2xl border-2 border-gray-100 hover:border-[#00555A] hover:bg-[#00555A]/5 transition-all text-center group active:scale-95">
+              <PencilSquareIcon class="w-10 h-10 text-[#00555A] mx-auto mb-3 group-hover:scale-110 transition-transform" />
+              <h4 class="font-bold text-[#00555A] mb-1">Input Manual</h4>
+              <p class="text-xs text-gray-500">Isi form secara manual</p>
+            </button>
+            <button @click="openScanMode" class="p-6 rounded-2xl border-2 border-gray-100 hover:border-[#F26430] hover:bg-[#F26430]/5 transition-all text-center group active:scale-95">
+              <QrCodeIcon class="w-10 h-10 text-[#F26430] mx-auto mb-3 group-hover:scale-110 transition-transform" />
+              <h4 class="font-bold text-[#F26430] mb-1">Scan QR & Barcode</h4>
+              <p class="text-xs text-gray-500">Scan QR pengunjung dan label buku</p>
+            </button>
+          </div>
+        </div>
+      </div>
+    </transition>
+
+    <!-- Scan Modal -->
+    <transition name="fade">
+      <div v-if="showScanModal" class="fixed inset-0 flex items-center justify-center z-50 bg-[#00282a]/50 backdrop-blur-sm p-4" @click.self="closeScanModal">
+        <div class="bg-white shadow-2xl rounded-2xl w-full max-w-lg overflow-hidden">
+          <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-2xl">
+            <h3 class="text-lg font-bold text-[#00555A] flex items-center gap-2">
+              <QrCodeIcon class="w-5 h-5 text-[#F26430]" />
+              Scan QR & Label Buku
+            </h3>
+            <button @click="closeScanModal" class="text-gray-400 hover:text-gray-600"><XMarkIcon class="w-6 h-6" /></button>
+          </div>
+          
+          <!-- Camera Area -->
+          <div class="relative h-[300px] bg-black overflow-hidden">
+            <qrcode-stream 
+              @detect="onScanDetect" 
+              @error="onScanError"
+              @camera-on="onScanCameraReady" 
+              :paused="false"
+              :track="paintScanBoundingBox"
+              class="h-full w-full object-cover"
+            >
+              <div v-if="scanCameraLoading" class="absolute inset-0 flex flex-col items-center justify-center bg-gray-900 z-10">
+                <div class="w-10 h-10 border-4 border-[#00555A] border-t-transparent rounded-full animate-spin mb-3"></div>
+                <p class="text-gray-400 text-xs font-mono uppercase tracking-widest">Inisialisasi Kamera...</p>
+              </div>
+
+              <div v-if="scanCameraError" class="absolute inset-0 flex flex-col items-center justify-center bg-gray-900 z-50 p-6 text-center">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-12 h-12 text-red-500 mb-2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                </svg>
+                <p class="text-white font-bold mb-1">Akses Kamera Gagal</p>
+                <p class="text-gray-400 text-sm">{{ scanCameraError }}</p>
+              </div>
+
+              <!-- Scan overlay with corners and line -->
+              <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div class="relative w-48 h-48 border-2 border-white/30 rounded-3xl overflow-hidden">
+                  <div class="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-[#F26430] rounded-tl-lg"></div>
+                  <div class="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-[#F26430] rounded-tr-lg"></div>
+                  <div class="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-[#F26430] rounded-bl-lg"></div>
+                  <div class="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-[#F26430] rounded-br-lg"></div>
+                  <div class="absolute w-full h-1 bg-gradient-to-r from-transparent via-[#F26430] to-transparent shadow-[0_0_15px_#F26430] animate-scan-line"></div>
+                </div>
+              </div>
+            </qrcode-stream>
+          </div>
+          
+          <!-- Status Chips & Actions -->
+          <div class="p-5 space-y-4">
+            <div class="flex gap-3">
+              <div 
+                class="flex-1 px-4 py-3 rounded-xl text-sm font-bold flex items-center gap-2 transition-colors"
+                :class="scannedBook 
+                  ? 'bg-green-50 text-green-700 border border-green-200' 
+                  : 'bg-gray-50 text-gray-400 border border-gray-200'"
+              >
+                <BookOpenIcon class="w-4 h-4 shrink-0" />
+                <span class="truncate">{{ scannedBook ? scannedBook.judul : 'Buku: Belum discan' }}</span>
+              </div>
+              <div 
+                class="flex-1 px-4 py-3 rounded-xl text-sm font-bold flex items-center gap-2 transition-colors"
+                :class="scannedUser 
+                  ? 'bg-green-50 text-green-700 border border-green-200' 
+                  : 'bg-gray-50 text-gray-400 border border-gray-200'"
+              >
+                <UserIcon class="w-4 h-4 shrink-0" />
+                <span class="truncate">{{ scannedUser ? scannedUser.nama_lengkap : 'Pengunjung: Belum discan' }}</span>
+              </div>
+            </div>
+            
+            <div 
+              v-if="scanStatusMessage" 
+              class="text-xs text-center px-3 py-2 rounded-lg transition-all"
+              :class="scanStatusError 
+                ? 'bg-red-50 text-red-500 border border-red-100' 
+                : 'bg-green-50 text-green-600 border border-green-100'"
+            >
+              {{ scanStatusMessage }}
+            </div>
+            
+            <button 
+              @click="proceedToForm"
+              :disabled="!scannedBook || !scannedUser"
+              class="w-full py-3 bg-[#00555A] hover:bg-[#004448] text-white rounded-xl text-sm font-bold shadow-md transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 active:scale-[0.98]"
+            >
+              Lanjut ke Form →
+            </button>
+          </div>
+        </div>
+      </div>
+    </transition>
+
   </div>
 </template>
 
@@ -500,15 +680,28 @@
 import { ref, reactive, computed, onMounted } from "vue";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
+import QrcodeVue from "qrcode.vue";
+import { QrcodeStream, setZXingModuleOverrides } from 'vue-qrcode-reader';
 import api from '@/api';
 import { 
   BookOpenIcon, PlusIcon, ClockIcon, ArchiveBoxIcon, 
   XMarkIcon, QueueListIcon, Square3Stack3DIcon,
   CheckCircleIcon, XCircleIcon, ExclamationTriangleIcon,
   PencilSquareIcon, TrashIcon, MagnifyingGlassIcon,
-  ArrowDownTrayIcon, ChatBubbleLeftRightIcon
+  ArrowDownTrayIcon, ChatBubbleLeftRightIcon,
+  QrCodeIcon, UserIcon
 } from "@heroicons/vue/24/outline";
 
+setZXingModuleOverrides({
+  locateFile: (path, prefix) => {
+    if (path.endsWith('.wasm')) {
+      return '/wasm/zxing_reader.wasm';
+    }
+    return prefix + path;
+  },
+});
+
+// ==================== STATE ====================
 const listUsers = ref([]); 
 const searchUser = ref(""); 
 const showUserDropdown = ref(false);
@@ -540,6 +733,23 @@ const alertState = reactive({
   onConfirm: null 
 });
 
+const showQrPreview = ref(false);
+const previewKodeBuku = ref("");
+
+const showModeModal = ref(false);
+
+const showScanModal = ref(false);
+const scanCameraLoading = ref(true);
+const scanCameraError = ref('');
+const scannedBook = ref(null);
+const scannedUser = ref(null);
+const scanStatusMessage = ref('');
+const scanStatusError = ref(false);
+const scanProcessing = ref(false);
+const lastScannedUserToken = ref('');
+let lastScanTime = 0;
+
+// ==================== COMPUTED ====================
 const isPinjamFormValid = computed(() => {
   const isPhoneValid = /^[0-9]+$/.test(newPinjam.value.noHp);
   return selectedUserId.value && selectedBookId.value && newPinjam.value.tanggalPinjam && newPinjam.value.tanggalKembali && newPinjam.value.noHp && isPhoneValid;
@@ -597,6 +807,7 @@ const filteredRiwayatPengembalian = computed(() => {
   );
 });
 
+// ==================== METHODS ====================
 const getInitials = (name) => {
     if(!name) return '?';
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
@@ -701,18 +912,7 @@ const selectBook = (buku) => {
 };
 
 const openPinjamModal = () => {
-  searchUser.value = ""; selectedUserId.value = null;
-  searchBook.value = ""; selectedBookId.value = null;
-  newPinjam.value.noHp = ""; 
-  
-  const today = new Date();
-  newPinjam.value.tanggalPinjam = today.toISOString().split('T')[0];
-  
-  const nextWeek = new Date(today);
-  nextWeek.setDate(today.getDate() + 7);
-  newPinjam.value.tanggalKembali = nextWeek.toISOString().split('T')[0];
-  
-  showPinjamModal.value = true;
+  showModeModal.value = true;
 };
 
 const cancelPinjam = () => { showPinjamModal.value = false; closeDropdowns(); };
@@ -803,6 +1003,212 @@ const deleteBuku = (buku) => {
   });
 }
 
+// --- QR Preview ---
+const openQrPreview = (kodeBuku) => {
+  previewKodeBuku.value = kodeBuku;
+  showQrPreview.value = true;
+};
+
+const closeQrPreview = () => {
+  showQrPreview.value = false;
+  previewKodeBuku.value = "";
+};
+
+// --- QR Download as PNG ---
+// Dipanggil dari modal preview (data-qr-container ada di sana)
+const downloadQrPng = (kodeBuku, event) => {
+  event.stopPropagation();
+  const container = event.target.closest('[data-qr-container]');
+  const svgElement = container?.querySelector('svg');
+  if (!svgElement) return;
+
+  const clonedSvg = svgElement.cloneNode(true);
+  clonedSvg.setAttribute('width', '512');
+  clonedSvg.setAttribute('height', '512');
+
+  const svgData = new XMLSerializer().serializeToString(clonedSvg);
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+
+  const img = new Image();
+  const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(svgBlob);
+
+  img.onload = () => {
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, 512, 512);
+    ctx.drawImage(img, 0, 0, 512, 512);
+    URL.revokeObjectURL(url);
+
+    const pngUrl = canvas.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = pngUrl;
+    a.download = `QR_${kodeBuku}.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  img.src = url;
+};
+
+// --- Mode Selection ---
+const openManualMode = () => {
+  showModeModal.value = false;
+
+  searchUser.value = ""; selectedUserId.value = null;
+  searchBook.value = ""; selectedBookId.value = null;
+  newPinjam.value.noHp = "";
+  
+  const today = new Date();
+  newPinjam.value.tanggalPinjam = today.toISOString().split('T')[0];
+  const nextWeek = new Date(today);
+  nextWeek.setDate(today.getDate() + 7);
+  newPinjam.value.tanggalKembali = nextWeek.toISOString().split('T')[0];
+  
+  showPinjamModal.value = true;
+};
+
+const openScanMode = () => {
+  showModeModal.value = false;
+
+  scannedBook.value = null;
+  scannedUser.value = null;
+  scanStatusMessage.value = '';
+  scanStatusError.value = false;
+  scanCameraLoading.value = true;
+  scanCameraError.value = '';
+  scanProcessing.value = false;
+  lastScannedUserToken.value = '';
+  lastScanTime = 0;
+
+  showScanModal.value = true;
+};
+
+const closeScanModal = () => {
+  showScanModal.value = false;
+};
+
+// --- Scan Camera ---
+const onScanCameraReady = () => {
+  scanCameraLoading.value = false;
+};
+
+const onScanError = (err) => {
+  scanCameraLoading.value = false;
+  scanCameraError.value = err.message || "Camera permission denied";
+};
+
+const paintScanBoundingBox = (detectedCodes, ctx) => {
+  for (const detectedCode of detectedCodes) {
+    const { boundingBox: { x, y, width, height } } = detectedCode;
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = '#00555A';
+    ctx.strokeRect(x, y, width, height);
+  }
+};
+
+const playSound = (type) => {
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  if (type === 'success') {
+    osc.frequency.value = 1000;
+    osc.type = 'sine';
+    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.5);
+  } else {
+    osc.frequency.value = 150;
+    osc.type = 'sawtooth';
+    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.3);
+  }
+};
+
+const onScanDetect = async (detectedCodes) => {
+  const now = Date.now();
+  if (now - lastScanTime < 1500) return;
+  if (scanProcessing.value) return;
+
+  const rawValue = detectedCodes[0]?.rawValue;
+  if (!rawValue) return;
+
+  if (scannedBook.value && scannedBook.value.kode_buku &&
+      scannedBook.value.kode_buku.toLowerCase() === rawValue.toLowerCase()) return;
+  if (lastScannedUserToken.value === rawValue) return;
+
+  lastScanTime = now;
+  scanProcessing.value = true;
+  scanStatusMessage.value = '';
+  scanStatusError.value = false;
+
+  try {
+    const matchedBook = daftarBuku.value.find(b =>
+      b.kode_buku && b.kode_buku.toLowerCase() === rawValue.toLowerCase()
+    );
+
+    if (matchedBook) {
+      scannedBook.value = matchedBook;
+      selectedBookId.value = matchedBook.id_buku;
+      searchBook.value = matchedBook.judul;
+      scanStatusMessage.value = `✓ Buku "${matchedBook.judul}" terdeteksi!`;
+      scanStatusError.value = false;
+      playSound('success');
+      return;
+    }
+
+    const response = await api.post('/staff/peminjaman/scan-user', { qr_code: rawValue });
+    const userData = response.data.data;
+    scannedUser.value = userData;
+    selectedUserId.value = userData.id_user;
+    searchUser.value = userData.nama_lengkap;
+    lastScannedUserToken.value = rawValue;
+    scanStatusMessage.value = `✓ Pengunjung "${userData.nama_lengkap}" terdeteksi!`;
+    scanStatusError.value = false;
+    playSound('success');
+
+  } catch (error) {
+    const msg = error.response?.data?.message || 'QR tidak dikenali.';
+    scanStatusMessage.value = msg;
+    scanStatusError.value = true;
+    playSound('error');
+    setTimeout(() => {
+      if (scanStatusMessage.value === msg) scanStatusMessage.value = '';
+    }, 3000);
+  } finally {
+    scanProcessing.value = false;
+  }
+};
+
+const proceedToForm = () => {
+  if (!scannedBook.value || !scannedUser.value) return;
+
+  showScanModal.value = false;
+
+  searchUser.value = scannedUser.value.nama_lengkap;
+  selectedUserId.value = scannedUser.value.id_user;
+  searchBook.value = scannedBook.value.judul;
+  selectedBookId.value = scannedBook.value.id_buku;
+
+  newPinjam.value.noHp = "";
+
+  const today = new Date();
+  newPinjam.value.tanggalPinjam = today.toISOString().split('T')[0];
+  const nextWeek = new Date(today);
+  nextWeek.setDate(today.getDate() + 7);
+  newPinjam.value.tanggalKembali = nextWeek.toISOString().split('T')[0];
+
+  showPinjamModal.value = true;
+};
+
 onMounted(fetchData);
 </script>
 
@@ -811,4 +1217,14 @@ onMounted(fetchData);
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+
+@keyframes scan-line {
+  0% { top: 0%; opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+.animate-scan-line {
+  animation: scan-line 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
 </style>
