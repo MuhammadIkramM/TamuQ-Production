@@ -38,7 +38,7 @@ class PengajuanSuratController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'jenis'          => 'required|in:Bebas Perpustakaan,Donasi Buku',
-            'file_pendukung' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120', 
+            'file_pendukung' => 'required|file|mimes:pdf,jpg,jpeg,png|mimetypes:application/pdf,image/jpeg,image/png|max:8192', 
             'no_hp'          => 'nullable|string|max:20', 
             'alamat'         => 'nullable|string|max:500',
             'jabatan'        => 'nullable|string|max:100',
@@ -140,7 +140,8 @@ class PengajuanSuratController extends Controller
 
         $validator = Validator::make($request->all(), [
             'status'       => 'required|in:Diterima,Ditolak,Selesai', 
-            'file_balasan' => 'required_if:status,Diterima|nullable|file|mimes:pdf,jpg,png|max:5120'
+            'file_balasan' => 'required_if:status,Diterima|nullable|file|mimes:pdf,jpg,png|mimetypes:application/pdf,image/jpeg,image/png|max:8192',
+            'pesan'        => 'required_if:status,Ditolak|nullable|string|max:1000'
         ]);
 
         if ($validator->fails()) {
@@ -164,6 +165,7 @@ class PengajuanSuratController extends Controller
                 $pengajuan->file_balasan = $path;
             }
 
+            $pengajuan->pesan = $request->pesan;
             $pengajuan->save();
 
             return response()->json([

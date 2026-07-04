@@ -19,6 +19,7 @@ class PengajuanSurat extends Model
         'nomor_induk',
         'prodi',
         'status',
+        'pesan',
         'jabatan',
         'alamat',
         'no_hp',
