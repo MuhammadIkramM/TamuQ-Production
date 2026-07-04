@@ -211,4 +211,43 @@ class PeminjamanController extends Controller
             return response()->json(['message' => 'Error: ' . $e->getMessage()], 500);
         }
     }
+
+    public function scanUser(Request $request)
+    {
+        $request->validate([
+            'qr_code' => 'required|string',
+        ]);
+
+        $tokenString = $request->qr_code;
+
+        $tokenData = DB::table('qr_tokens')->where('token', $tokenString)->first();
+
+        if (!$tokenData) {
+            return response()->json(['message' => 'QR Code tidak ditemukan.'], 404);
+        }
+
+        if ($tokenData->status === 'used') {
+            return response()->json(['message' => 'QR Code sudah digunakan untuk kunjungan.'], 400);
+        }
+
+        if (Carbon::now()->gt($tokenData->expires_at)) {
+            return response()->json(['message' => 'QR Code kadaluarsa, minta pengunjung generate ulang.'], 400);
+        }
+
+        $user = User::where('id_user', $tokenData->user_id)->first();
+
+        if (!$user) {
+            return response()->json(['message' => 'Data user tidak ditemukan.'], 404);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'id_user'       => $user->id_user,
+                'nama_lengkap'  => $user->nama_lengkap,
+                'nomor_induk'   => $user->nomor_induk,
+                'prodi'         => $user->prodi,
+            ]
+        ]);
+    }
 }
