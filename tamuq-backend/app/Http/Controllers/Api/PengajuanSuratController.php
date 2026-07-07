@@ -179,6 +179,39 @@ class PengajuanSuratController extends Controller
         }
     }
 
+    public function updatePesan(Request $request, $id)
+    {
+        if (strtolower($request->user()->role) === 'pengunjung') {
+            return response()->json(['message' => 'Unauthorized. Akses ditolak.'], 403);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'pesan' => 'nullable|string|max:1000'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['message' => $validator->errors()->first()], 422);
+        }
+
+        $pengajuan = PengajuanSurat::find($id);
+        if (!$pengajuan) {
+            return response()->json(['message' => 'Data tidak ditemukan'], 404);
+        }
+
+        try {
+            $pengajuan->pesan = $request->pesan;
+            $pengajuan->save();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Keterangan berhasil diperbarui.',
+                'data' => $pengajuan
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Gagal memperbarui keterangan: ' . $e->getMessage()], 500);
+        }
+    }
+
     public function downloadPendukung(Request $request, $filename)
     {
         if (!$request->user()) {
@@ -186,7 +219,10 @@ class PengajuanSuratController extends Controller
         }
 
         $user = $request->user();
-        $pengajuan = PengajuanSurat::where('file_pendukung', 'LIKE', '%' . $filename . '%')->first();
+        $escapedFilename = str_replace(['%', '_'], ['\%', '\_'], $filename);
+        $pengajuan = PengajuanSurat::where('file_pendukung', $filename)
+            ->orWhere('file_pendukung', 'LIKE', '%/' . $escapedFilename)
+            ->first();
 
         if (!$pengajuan) {
             return response()->json(['message' => 'Data pengajuan tidak ditemukan di database.'], 404);
@@ -213,7 +249,10 @@ class PengajuanSuratController extends Controller
         }
 
         $user = $request->user();
-        $pengajuan = PengajuanSurat::where('file_balasan', 'LIKE', '%' . $filename . '%')->first();
+        $escapedFilename = str_replace(['%', '_'], ['\%', '\_'], $filename);
+        $pengajuan = PengajuanSurat::where('file_balasan', $filename)
+            ->orWhere('file_balasan', 'LIKE', '%/' . $escapedFilename)
+            ->first();
 
         if (!$pengajuan) {
             return response()->json(['message' => 'Data pengajuan tidak ditemukan di database.'], 404);

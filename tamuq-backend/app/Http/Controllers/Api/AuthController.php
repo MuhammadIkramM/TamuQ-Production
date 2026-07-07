@@ -28,8 +28,10 @@ class AuthController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'nomor_induk' => 'required|string|alpha_num|max:50', 
+            'nomor_induk' => ['required', 'string', 'max:50', 'regex:/^[0-9]+$/'],
             'password' => 'required',
+        ], [
+            'nomor_induk.regex' => 'Nomor Induk / NIM hanya boleh berisi angka.'
         ]);
 
         if ($validator->fails()) {
@@ -90,13 +92,13 @@ class AuthController extends Controller
 
         $validator = Validator::make($request->all(), [
             'name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z0-9\s\.\,\-_\']+$/'],
-            'nomor_induk' => ['required', 'string', 'max:50', 'regex:/^[a-zA-Z0-9]+$/', 'unique:users,nomor_induk'],
+            'nomor_induk' => ['required', 'string', 'max:50', 'regex:/^[0-9]+$/', 'unique:users,nomor_induk'],
             'prodi' => ['required', 'string', 'max:100', 'regex:/^[a-zA-Z0-9\s]+$/'],
             'password' => ['required', 'string', 'min:6'],
             'role' => ['required', 'string']
         ], [
             'name.regex' => 'Nama hanya boleh berisi huruf, angka, spasi, titik, koma, garis datar, dan garis bawah.',
-            'nomor_induk.regex' => 'Nomor induk hanya boleh berisi huruf dan angka.',
+            'nomor_induk.regex' => 'Nomor Induk / NIM hanya boleh berisi angka.',
             'prodi.regex' => 'Prodi mengandung karakter yang tidak valid.'
         ]);
 
