@@ -1,5 +1,0 @@
-project ini masih belum sempurna. ini bug yang saya dapat sejauh ini.
-
-1. saat user tidak aktif selama periode tertentu dan kembali mengakses web akan ada muncul "Apakah Anda yakin ingin keluar?". seharusnya langsung logout tanpa konfirmasi. ingat untuk perbaiki nanti !
-
-2. staff bisa mem bypass link https://tamuq.my.id/staff/manajemen-akun padahal dia bukan superadmin. fitur manajemen akun hanya exclusive untuk role superadmin. ini juga berlaku untuk fitur scan qr yang dimana bisa di bypass oleh superadmin melalui link https://tamuq.my.id/staff/scan-qr. perbaiki ini untuk mencegah kecurangan dan manipulasi oleh kedua role.

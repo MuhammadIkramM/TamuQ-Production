@@ -39,6 +39,8 @@ const handleLogin = async (formData) => {
       } else {
         router.push('/user/dashboard'); 
       }
+    } else {
+      errorMessage.value = response.data.message || 'Login gagal. Silakan coba lagi.';
     }
 
   } catch (error) {

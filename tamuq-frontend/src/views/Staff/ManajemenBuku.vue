@@ -70,10 +70,11 @@
         <table class="w-full text-left border-collapse whitespace-nowrap">
           <thead class="sticky top-0 z-10 shadow-sm">
             <tr class="bg-[#66999C] text-white text-xs uppercase tracking-wider font-semibold">
-              <th class="px-6 py-3">Kode Buku</th>
               <th class="px-3 py-3 text-center w-14">
                 <QrCodeIcon class="w-4 h-4 text-white/70 mx-auto" />
               </th>
+              <th class="px-6 py-3">Kode Buku</th>
+              <th class="px-3 py-3 text-center w-16">Foto</th>
               <th class="px-6 py-3">Judul Buku</th>
               <th class="px-6 py-3">Kategori</th>
               <th class="px-6 py-3">Penulis</th>
@@ -85,9 +86,7 @@
           </thead>
           <tbody class="divide-y divide-gray-50">
             <tr v-for="buku in filteredKatalog" :key="buku.id_buku" class="hover:bg-gray-50 transition-colors">
-              <td class="px-6 py-3 text-sm font-mono text-gray-600">{{ buku.kode_buku || '-' }}</td>
               <td class="px-3 py-3 text-center">
-                <!-- CHANGED: Removed hover blur+download overlay from table QR. Click only opens preview. -->
                 <div 
                   v-if="buku.kode_buku" 
                   class="inline-block cursor-pointer"
@@ -102,7 +101,15 @@
                     foreground="#1f2937"
                   />
                 </div>
-                <span v-else class="text-gray-300">—</span>
+              </td>
+              <td class="px-6 py-3 text-sm font-mono text-gray-600">{{ buku.kode_buku || '-' }}</td>
+              <td class="px-3 py-3 text-center">
+                <img 
+                  v-if="buku.foto_buku" 
+                  :src="buku.foto_buku" 
+                  alt="Foto Buku"
+                  class="w-10 h-14 object-cover rounded border border-gray-200 mx-auto"
+                />
               </td>
               <td class="px-6 py-3 text-sm font-medium text-gray-800">{{ buku.judul }}</td>
               <td class="px-6 py-3 text-sm text-gray-500">
@@ -138,7 +145,7 @@
                 </td>
             </tr>
             <tr v-if="filteredKatalog.length === 0">
-              <td colspan="9" class="px-6 py-8 text-center text-gray-400 text-sm">
+              <td colspan="10" class="px-6 py-8 text-center text-gray-400 text-sm">
                 {{ searchKatalog ? 'Buku tidak ditemukan.' : 'Belum ada data buku.' }}
               </td>
             </tr>
@@ -240,8 +247,9 @@
                 </td>
 
                 <td class="px-4 py-4 text-center align-middle">
-                  <button @click="kembalikanBuku(pinjam)" class="px-3 py-1.5 bg-[#00555A] hover:bg-[#004448] text-white rounded-lg text-xs font-medium transition shadow-sm hover:shadow-md">
-                    Kembalikan
+                  <button @click="kembalikanBuku(pinjam)" :disabled="returningBookId !== null" class="px-3 py-1.5 bg-[#00555A] hover:bg-[#004448] text-white rounded-lg text-xs font-medium transition shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5">
+                    <svg v-if="returningBookId === pinjam.id && isReturnRequestInFlight" class="animate-spin h-3.5 w-3.5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    <span>{{ returningBookId === pinjam.id && isReturnRequestInFlight ? 'Memproses...' : 'Kembalikan' }}</span>
                   </button>
                 </td>
               </tr>
@@ -305,7 +313,7 @@
              <h3 class="text-lg font-bold text-[#00555A]">Catat Peminjaman</h3>
              <button @click="cancelPinjam" class="text-gray-400 hover:text-gray-600"><XMarkIcon class="w-6 h-6" /></button>
           </div>
-          <div class="p-6 space-y-5">
+          <div class="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
              
              <div class="space-y-1 relative">
                <label class="text-xs font-bold text-gray-500 uppercase">Nama Peminjam <span class="text-red-500">*</span></label>
@@ -405,7 +413,11 @@
           </div>
           <div class="px-6 py-4 bg-gray-50 flex justify-end gap-3 rounded-b-2xl border-t border-gray-100">
             <button @click="cancelPinjam" class="px-4 py-2 text-gray-700 text-sm font-medium hover:bg-gray-100 rounded-lg transition">Batal</button>
-            <button @click="confirmPinjam" :disabled="!isPinjamFormValid" class="px-4 py-2 bg-[#00555A] text-white rounded-lg text-sm font-medium hover:bg-[#004448] shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition">Simpan Data</button>
+            <button @click="confirmPinjam" :disabled="!isPinjamFormValid || isProcessingPinjam" class="px-4 py-2 bg-[#00555A] text-white rounded-lg text-sm font-medium hover:bg-[#004448] shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2">
+              <svg v-if="isProcessingPinjam" class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+              <span v-if="isProcessingPinjam">Menyimpan...</span>
+              <span v-else>Simpan Data</span>
+            </button>
           </div>
         </div>
       </div>
@@ -421,7 +433,7 @@
              <h3 class="text-lg font-bold text-[#00555A]">{{ isEditing ? 'Edit Data Buku' : 'Tambah Buku Baru' }}</h3>
              <button @click="cancelBook" class="text-gray-400 hover:text-gray-600"><XMarkIcon class="w-6 h-6" /></button>
           </div>
-          <div class="p-6 space-y-4">
+          <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
              
              <div class="space-y-1">
                <label class="text-xs font-bold text-gray-500 uppercase">Kode Buku</label>
@@ -457,7 +469,7 @@
 
              <div class="space-y-1">
                <label class="text-xs font-bold text-gray-500 uppercase">Tempat</label>
-               <input type="text" v-model="newBuku.tempat" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00555A] focus:border-[#00555A] text-sm outline-none" placeholder="Masukkan tempat penyimpanan..." />
+               <input type="text" v-model="newBuku.tempat" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00555A] focus:border-[#00555A] text-sm outline-none" placeholder="Masukkan lokasi terbit buku..." />
              </div>
 
              <div v-if="isEditing" class="space-y-1 pt-2 border-t border-gray-100">
@@ -467,8 +479,10 @@
           </div>
           <div class="px-6 py-4 bg-gray-50 flex justify-end gap-3 rounded-b-2xl border-t border-gray-100">
             <button @click="cancelBook" class="px-4 py-2 text-gray-700 text-sm font-medium hover:bg-gray-100 rounded-lg transition">Batal</button>
-            <button @click="saveBook" :disabled="!isBookFormValid" class="px-4 py-2 bg-[#00555A] text-white rounded-lg text-sm font-medium hover:bg-[#004448] shadow-md disabled:opacity-50 transition">
-              {{ isEditing ? 'Update Buku' : 'Simpan Buku' }}
+            <button @click="saveBook" :disabled="!isBookFormValid || isSavingBook" class="px-4 py-2 bg-[#00555A] text-white rounded-lg text-sm font-medium hover:bg-[#004448] shadow-md disabled:opacity-50 transition flex items-center gap-2">
+              <svg v-if="isSavingBook" class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+              <span v-if="isSavingBook">Menyimpan...</span>
+              <span v-else>{{ isEditing ? 'Update Buku' : 'Simpan Buku' }}</span>
             </button>
           </div>
         </div>
@@ -508,10 +522,13 @@
             </button>
             <button 
               @click="handleAlertConfirm" 
-              class="px-5 py-2.5 rounded-xl text-white font-medium shadow-lg transition"
+              :disabled="isDeleting"
+              class="px-5 py-2.5 rounded-xl text-white font-medium shadow-lg transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               :class="alertState.type === 'error' ? 'bg-red-600 hover:bg-red-700 shadow-red-200' : (alertState.type === 'confirm' ? 'bg-[#00555A] hover:bg-[#004448] shadow-[#00555A]/30' : 'bg-green-600 hover:bg-green-700 shadow-green-200')"
             >
-              {{ alertState.type === 'confirm' ? 'Ya, Lanjutkan' : 'Oke, Mengerti' }}
+              <svg v-if="isDeleting" class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+              <span v-if="isDeleting">Memproses...</span>
+              <span v-else>{{ alertState.type === 'confirm' ? 'Ya, Lanjutkan' : 'Oke, Mengerti' }}</span>
             </button>
           </div>
         </div>
@@ -725,6 +742,11 @@ const daftarBuku = ref([]);
 const isEditing = ref(false);
 const currentBookId = ref(null);
 const newBuku = ref({ kode_buku: "", judul: "", penulis: "", kategori: "", tempat: "", tahun_buku: "", jumlah_tersedia: 1 });
+const isSavingBook = ref(false);
+const isProcessingPinjam = ref(false);
+const isDeleting = ref(false);
+const returningBookId = ref(null);
+const isReturnRequestInFlight = ref(false);
 
 const alertState = reactive({
   show: false,
@@ -873,10 +895,25 @@ const showConfirmBox = (message, onConfirmAction) => {
   alertState.show = true;
 };
 
-const closeAlert = () => alertState.show = false;
-const handleAlertConfirm = () => {
-  if (alertState.type === 'confirm' && alertState.onConfirm) alertState.onConfirm();
-  closeAlert();
+const closeAlert = () => {
+  alertState.show = false;
+  returningBookId.value = null;
+};
+const handleAlertConfirm = async () => {
+  if (isDeleting.value) return;
+  if (alertState.type === 'confirm' && alertState.onConfirm) {
+    isDeleting.value = true;
+    try {
+      await alertState.onConfirm();
+    } finally {
+      isDeleting.value = false;
+      if (alertState.type === 'confirm') {
+        closeAlert();
+      }
+    }
+  } else {
+    closeAlert();
+  }
 };
 
 const fetchData = async () => {
@@ -918,7 +955,9 @@ const openPinjamModal = () => {
 const cancelPinjam = () => { showPinjamModal.value = false; closeDropdowns(); };
 
 const confirmPinjam = async () => {
+  if (isProcessingPinjam.value) return;
   if (!isPinjamFormValid.value) return;
+  isProcessingPinjam.value = true;
   try {
       const payload = {
           id_user: selectedUserId.value, 
@@ -935,17 +974,26 @@ const confirmPinjam = async () => {
       showAlertBox("Berhasil mencatat peminjaman!", "success");
   } catch (error) {
       showAlertBox(error.response?.data?.message || "Gagal menyimpan data peminjaman.", "error");
+  } finally {
+      isProcessingPinjam.value = false;
   }
 };
 
 const kembalikanBuku = (pinjam) => {
+  if (returningBookId.value !== null) return;
+  returningBookId.value = pinjam.id;
+
   showConfirmBox(`Kembalikan buku "${pinjam.judulBuku}"?`, async () => {
+    isReturnRequestInFlight.value = true;
     try {
         await api.post(`/staff/peminjaman/${pinjam.id}/return`);
         await fetchData(); 
         showAlertBox("Buku berhasil dikembalikan.", "success");
     } catch (e) { 
         showAlertBox(e.response?.data?.message || "Gagal memproses pengembalian.", "error"); 
+    } finally {
+        isReturnRequestInFlight.value = false;
+        returningBookId.value = null;
     }
   });
 };
@@ -974,7 +1022,9 @@ const openBookModal = (mode, buku = null) => {
 const cancelBook = () => showBookModal.value = false;
 
 const saveBook = async () => {
+  if (isSavingBook.value) return;
   if (!isBookFormValid.value) return;
+  isSavingBook.value = true;
   
   try {
     if (isEditing.value && currentBookId.value) {
@@ -988,6 +1038,8 @@ const saveBook = async () => {
     await fetchData(); 
   } catch (e) { 
     showAlertBox(e.response?.data?.message || "Gagal menyimpan data buku.", "error"); 
+  } finally {
+    isSavingBook.value = false;
   }
 };
 

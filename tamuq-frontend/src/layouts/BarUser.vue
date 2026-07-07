@@ -146,7 +146,7 @@ import { useAuthStore } from '@/stores/auth';
 import { 
   Bars3BottomRightIcon, XMarkIcon, HomeIcon, QrCodeIcon, ClockIcon, 
   DocumentTextIcon, GiftIcon, BookOpenIcon, Cog6ToothIcon, 
-  ArrowRightOnRectangleIcon, ChevronRightIcon
+  ArrowRightOnRectangleIcon, ChevronRightIcon, AcademicCapIcon
 } from "@heroicons/vue/24/outline";
 
 const isSidebarOpen = ref(false);
@@ -164,6 +164,7 @@ const menuItems = [
   { name: "Surat Bebas Perpustakaan", path: "/user/surat-bebas", icon: DocumentTextIcon },
   { name: "Surat Donasi Buku", path: "/user/donasi", icon: GiftIcon },
   { name: "Layanan Buku", path: "/user/layanan-buku", icon: BookOpenIcon },
+  { name: "E-Skripsi", path: "/user/e-skripsi", icon: AcademicCapIcon },
   { name: "Pengaturan", path: "/user/pengaturan", icon: Cog6ToothIcon },
 ];
 

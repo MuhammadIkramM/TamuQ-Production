@@ -1,162 +1,284 @@
 <template>
   <div class="max-w-5xl mx-auto space-y-10">
     
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-      <div>
-        <h1 class="text-2xl font-bold text-[#00555A] flex items-center gap-2">
-          <BookOpenIcon class="w-8 h-8 text-[#F26430]" />
-          Layanan Buku
-        </h1>
-        <p class="text-gray-500 text-sm mt-1">Pantau status peminjaman dan riwayat bacaan Anda.</p>
+    <div>
+      <h1 class="text-2xl font-bold text-[#00555A] flex items-center gap-2">
+        <BookOpenIcon class="w-8 h-8 text-[#F26430]" />
+        Layanan Buku
+      </h1>
+      <p class="text-gray-500 text-sm mt-1">Jelajahi katalog buku, pinjam via QR, dan pantau status peminjaman Anda.</p>
+    </div>
+
+    <!-- ========== GRID KATALOG SELURUH BUKU (ATAS) ========== -->
+    <div class="space-y-4">
+      <div class="flex items-center gap-2">
+        <Square3Stack3DIcon class="w-5 h-5 text-[#F26430]" />
+        <h2 class="text-lg font-bold text-[#00555A]">Katalog Buku</h2>
+        <span class="text-xs font-medium bg-[#00555A]/10 text-[#00555A] px-2 py-0.5 rounded-md">
+          {{ filteredBuku.length }} buku
+        </span>
       </div>
 
-      <div class="flex items-center gap-3">
+      <!-- Loading skeleton grid -->
+      <div v-if="isLoadingKatalog" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div v-for="n in 8" :key="'skel-'+n" class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden animate-pulse">
+          <div class="h-40 bg-gray-100"></div>
+          <div class="p-3 space-y-2">
+            <div class="h-4 bg-gray-100 rounded w-3/4"></div>
+            <div class="h-3 bg-gray-100 rounded w-1/2"></div>
+            <div class="h-3 bg-gray-100 rounded w-1/3"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty state -->
+      <div v-else-if="filteredBuku.length === 0" class="bg-white border border-dashed border-gray-300 rounded-2xl p-8 text-center">
+        <p class="text-gray-400 font-medium">
+          {{ (searchQuery || filterKategori || filterTahun) ? 'Tidak ada buku yang cocok dengan filter Anda.' : 'Belum ada buku dalam katalog.' }}
+        </p>
+      </div>
+
+      <!-- Grid buku -->
+      <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div 
+          v-for="buku in filteredBuku" 
+          :key="buku.id_buku"
+          class="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-[#00555A]/20 transition-all overflow-hidden group"
+        >
+          <!-- Foto Buku -->
+          <div class="relative h-44 bg-gray-50 overflow-hidden">
+            <img 
+              v-if="buku.foto_buku" 
+              :src="'https://tamuq.my.id/storage/' + buku.foto_buku" 
+              :alt="buku.judul"
+              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              loading="lazy"
+            />
+          </div>
+
+          <!-- Info Buku -->
+          <div class="p-3 space-y-1.5">
+            <h3 class="font-bold text-gray-800 text-sm leading-tight line-clamp-2 group-hover:text-[#00555A] transition-colors">
+              {{ buku.judul }}
+            </h3>
+            <p v-if="buku.penulis" class="text-xs text-gray-500 truncate">
+              {{ buku.penulis }}
+            </p>
+            <div class="flex items-center justify-between gap-1 pt-1">
+              <span v-if="buku.kategori" class="text-[10px] font-semibold text-[#00555A] bg-[#00555A]/10 px-1.5 py-0.5 rounded truncate max-w-[60%]">
+                {{ buku.kategori }}
+              </span>
+              <span v-if="buku.tahun_buku" class="text-[10px] text-gray-400 font-medium shrink-0">
+                {{ buku.tahun_buku }}
+              </span>
+            </div>
+            <div class="flex items-center gap-1 pt-0.5">
+              <span 
+                class="text-[10px] font-bold px-1.5 py-0.5 rounded"
+                :class="buku.jumlah_tersedia > 0 
+                  ? 'text-emerald-700 bg-emerald-50 border border-emerald-200' 
+                  : 'text-red-600 bg-red-50 border border-red-200'"
+              >
+                {{ buku.jumlah_tersedia > 0 ? 'Tersedia: ' + buku.jumlah_tersedia : 'Habis' }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== TOOLBAR: QR + Search + Filter (BAWAH GRID) ========== -->
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+      <div class="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3">
+        
+        <!-- Tombol Pinjam via QR (dipindahkan, fungsi tetap) -->
         <button
           @click="openQrModal"
-          class="flex items-center gap-2 px-4 py-2.5 bg-[#F26430] hover:bg-[#D65020] text-white rounded-xl transition-all text-sm font-bold shadow-md shadow-[#F26430]/20 active:scale-95"
+          class="flex items-center justify-center gap-2 px-4 py-2.5 bg-[#F26430] hover:bg-[#D65020] text-white rounded-xl transition-all text-sm font-bold shadow-md shadow-[#F26430]/20 active:scale-95 shrink-0"
         >
           <QrCodeIcon class="w-5 h-5" />
           Pinjam Buku via QR
         </button>
 
-        <div class="relative w-full sm:w-80">
+        <!-- Kolom Pencarian -->
+        <div class="relative flex-1 min-w-[200px]">
           <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <MagnifyingGlassIcon class="w-5 h-5 text-gray-400" />
           </div>
           <input 
             type="text" 
             v-model="searchQuery" 
-            class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00555A] focus:border-[#00555A] text-sm outline-none transition-all shadow-sm"
-            placeholder="Cari judul buku yang dipinjam / riwayat..."
+            class="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00555A] focus:border-[#00555A] text-sm outline-none transition-all"
+            placeholder="Cari kode, judul, penulis, atau kategori..."
           />
         </div>
+
+        <!-- Dropdown Filter Kategori -->
+        <div class="relative min-w-[150px]">
+          <select
+            v-model="filterKategori"
+            class="w-full appearance-none pl-3 pr-8 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00555A] focus:border-[#00555A] text-sm outline-none transition-all cursor-pointer"
+          >
+            <option value="">Semua Kategori</option>
+            <option v-for="kat in kategoriOptions" :key="kat" :value="kat">{{ kat }}</option>
+          </select>
+          <FunnelIcon class="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+        </div>
+
+        <!-- Dropdown Filter Tahun -->
+        <div class="relative min-w-[130px]">
+          <select
+            v-model="filterTahun"
+            class="w-full appearance-none pl-3 pr-8 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00555A] focus:border-[#00555A] text-sm outline-none transition-all cursor-pointer"
+          >
+            <option value="">Semua Tahun</option>
+            <option v-for="thn in tahunOptions" :key="thn" :value="thn">{{ thn }}</option>
+          </select>
+          <FunnelIcon class="w-4 h-4 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+        </div>
       </div>
     </div>
 
-    <div class="space-y-4">
-      <div class="flex items-center gap-2">
-        <BookmarkSquareIcon class="w-5 h-5 text-[#F26430]" />
-        <h2 class="text-lg font-bold text-[#00555A]">Sedang Dipinjam</h2>
-      </div>
+    <!-- ========== WRAPPER GRID: Sedang Dipinjam + Riwayat Pengembalian ========== -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
 
-      <div v-if="isLoading" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm h-36 animate-pulse"></div>
-        <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm h-36 animate-pulse"></div>
-      </div>
+      <!-- ========== SECTION: Sedang Dipinjam (EXISTING) ========== -->
+      <div class="space-y-4">
+        <div class="flex items-center gap-2">
+          <BookmarkSquareIcon class="w-5 h-5 text-[#F26430]" />
+          <h2 class="text-lg font-bold text-[#00555A]">Sedang Dipinjam</h2>
+        </div>
 
-      <div v-else-if="filteredAktif.length === 0" class="col-span-full bg-white border border-dashed border-gray-300 rounded-2xl p-8 text-center">
-        <p class="text-gray-400 font-medium">
-          {{ searchQuery ? 'Tidak ada buku aktif yang cocok dengan pencarian.' : 'Tidak ada buku yang sedang dipinjam.' }}
-        </p>
-      </div>
+        <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+          
+          <div v-if="isLoading" class="p-5 space-y-4">
+              <div class="h-12 bg-gray-100 rounded-lg animate-pulse w-full"></div>
+              <div class="h-12 bg-gray-100 rounded-lg animate-pulse w-full"></div>
+          </div>
 
-      <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div 
-          v-for="item in filteredAktif" 
-          :key="item.id"
-          class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md hover:border-[#F26430]/30 transition-all relative overflow-hidden group"
-        >
-          <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-[#F26430]"></div>
-          <div class="flex items-start gap-4 pl-2">
-            <div class="w-12 h-12 bg-[#F26430]/10 rounded-xl flex items-center justify-center text-[#F26430] shrink-0">
-              <BookOpenIcon class="w-6 h-6" />
-            </div>
-            <div class="flex-1">
-              <h3 class="font-bold text-gray-800 text-lg leading-tight group-hover:text-[#00555A] transition-colors">
-                {{ item.judulBuku }}
-              </h3>
-              <div class="mt-3 space-y-1.5">
-                <div class="flex items-center gap-2 text-sm text-gray-500">
-                  <CalendarDaysIcon class="w-4 h-4 text-[#00555A]" />
-                  <span>Pinjam: <span class="font-medium text-gray-700">{{ item.tanggalPinjam }}</span></span>
+          <div v-else-if="filteredAktif.length === 0" class="p-10 text-center">
+            <p class="text-gray-400 font-medium">
+              {{ searchQuery ? 'Tidak ada buku aktif yang cocok dengan pencarian.' : 'Tidak ada buku yang sedang dipinjam.' }}
+            </p>
+          </div>
+
+          <div v-else class="divide-y divide-gray-50">
+            <div 
+              v-for="item in filteredAktif" 
+              :key="item.id"
+              class="p-5 hover:bg-[#FFF3EC]/50 transition-colors flex flex-col sm:flex-row sm:items-start gap-4 relative group"
+            >
+              <div class="absolute left-0 top-0 bottom-0 w-1 bg-[#F26430] opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              
+              <div class="w-10 h-10 rounded-full bg-[#F26430]/10 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                <BookOpenIcon class="w-5 h-5 text-[#F26430]" />
+              </div>
+              
+              <div class="flex-1 min-w-0">
+                <h4 class="font-bold text-gray-800 break-words group-hover:text-[#00555A] transition-colors leading-tight">{{ item.judulBuku }}</h4>
+                <div class="flex flex-col sm:flex-row sm:items-center gap-x-4 gap-y-1 mt-1.5 text-xs text-gray-500">
+                  <span class="flex items-center gap-1">
+                    <CalendarDaysIcon class="w-4 h-4 text-[#00555A]" />
+                    <span>Pinjam: <span class="font-medium text-gray-700">{{ item.tanggalPinjam }}</span></span>
+                  </span>
+                  <span class="flex items-center gap-1">
+                    <ClockIcon class="w-4 h-4 text-[#F26430]" />
+                    <span>Batas Kembali: <span class="font-medium text-gray-700">{{ item.batasPengembalian }}</span></span>
+                  </span>
                 </div>
                 
-                <div class="flex items-center gap-2 text-sm text-gray-500">
-                  <ClockIcon class="w-4 h-4 text-[#F26430]" />
-                  <span>Batas Kembali: <span class="font-medium text-gray-700">{{ item.batasPengembalian }}</span></span>
+                <div class="mt-2.5">
+                  <div v-if="item.sisaHari < 0" class="flex items-center gap-1.5 text-[11px] text-white bg-red-500 w-fit px-2 py-1 rounded font-bold shadow-sm">
+                    <ExclamationCircleIcon class="w-3.5 h-3.5" />
+                    <span>Terlambat {{ Math.abs(item.sisaHari) }} hari! Segera kembalikan!</span>
+                  </div>
+                  <div v-else-if="item.sisaHari === 0" class="flex items-center gap-1.5 text-[11px] text-white bg-orange-500 w-fit px-2 py-1 rounded font-bold shadow-sm">
+                    <ExclamationTriangleIcon class="w-3.5 h-3.5" />
+                    <span>HARI INI batas terakhir pengembalian!</span>
+                  </div>
+                  <div v-else-if="item.sisaHari === 1" class="flex items-center gap-1.5 text-[11px] text-orange-600 bg-orange-100 border border-orange-200 w-fit px-2 py-1 rounded font-bold">
+                    <ClockIcon class="w-3.5 h-3.5" />
+                    <span>Besok adalah batas pengembalian.</span>
+                  </div>
+                  <div v-else class="flex items-center gap-1.5 text-[11px] text-[#00555A] bg-[#00555A]/10 border border-[#00555A]/20 w-fit px-2 py-1 rounded font-bold">
+                    <CheckCircleIcon class="w-3.5 h-3.5" />
+                    <span>Sisa waktu peminjaman: {{ item.sisaHari }} hari</span>
+                  </div>
                 </div>
-
-                <div v-if="item.sisaHari < 0" class="flex items-center gap-1.5 text-[11px] text-white bg-red-500 w-fit px-2 py-1 rounded mt-1 font-bold shadow-sm">
-                  <ExclamationCircleIcon class="w-3.5 h-3.5" />
-                  <span>Terlambat {{ Math.abs(item.sisaHari) }} hari! Segera kembalikan!</span>
-                </div>
-                <div v-else-if="item.sisaHari === 0" class="flex items-center gap-1.5 text-[11px] text-white bg-orange-500 w-fit px-2 py-1 rounded mt-1 font-bold shadow-sm">
-                  <ExclamationTriangleIcon class="w-3.5 h-3.5" />
-                  <span>HARI INI batas terakhir pengembalian!</span>
-                </div>
-                <div v-else-if="item.sisaHari === 1" class="flex items-center gap-1.5 text-[11px] text-orange-600 bg-orange-100 border border-orange-200 w-fit px-2 py-1 rounded mt-1 font-bold">
-                  <ClockIcon class="w-3.5 h-3.5" />
-                  <span>Besok adalah batas pengembalian.</span>
-                </div>
-                <div v-else class="flex items-center gap-1.5 text-[11px] text-[#00555A] bg-[#00555A]/10 border border-[#00555A]/20 w-fit px-2 py-1 rounded mt-1 font-bold">
-                  <CheckCircleIcon class="w-3.5 h-3.5" />
-                  <span>Sisa waktu peminjaman: {{ item.sisaHari }} hari</span>
-                </div>
-
               </div>
-            </div>
-            <span class="bg-[#F26430]/10 text-[#D65020] text-xs font-bold px-2 py-1 rounded uppercase tracking-wider">
-              {{ item.status }}
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="space-y-4">
-      <div class="flex items-center gap-2">
-        <ArchiveBoxIcon class="w-5 h-5 text-[#00555A]" />
-        <h2 class="text-lg font-bold text-[#00555A]">Riwayat Pengembalian</h2>
-      </div>
-
-      <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-        
-        <div v-if="isLoading" class="p-5 space-y-4">
-            <div class="h-12 bg-gray-100 rounded-lg animate-pulse w-full"></div>
-            <div class="h-12 bg-gray-100 rounded-lg animate-pulse w-full"></div>
-        </div>
-
-        <div v-else-if="filteredRiwayat.length === 0" class="p-10 text-center">
-          <p class="text-gray-400 font-medium">
-            {{ searchQuery ? 'Tidak ada riwayat yang cocok dengan pencarian.' : 'Belum ada riwayat pengembalian buku.' }}
-          </p>
-        </div>
-
-        <div v-else class="divide-y divide-gray-50">
-          <div 
-            v-for="item in filteredRiwayat" 
-            :key="item.id"
-            class="p-5 hover:bg-[#EBF2FA]/50 transition-colors flex flex-col sm:flex-row sm:items-center gap-4 group"
-          >
-            <div class="w-10 h-10 rounded-full bg-[#EBF2FA] flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-              <CheckCircleIcon class="w-5 h-5 text-[#00555A]" />
-            </div>
-            <div class="flex-1">
-              <h4 class="font-bold text-gray-800 group-hover:text-[#00555A] transition-colors">{{ item.judulBuku }}</h4>
-              <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-xs text-gray-500">
-                <span class="flex items-center gap-1">
-                  <ArrowLongRightIcon class="w-3 h-3 text-[#F26430]" />
-                  Pinjam: {{ item.tanggalPinjam }}
-                </span>
-                <span class="flex items-center gap-1 text-[#00555A] font-medium">
-                  <ArrowLongLeftIcon class="w-3 h-3" />
-                  Kembali: {{ item.tanggalKembali }}
+              
+              <div class="flex items-center justify-between sm:justify-end w-full sm:w-auto mt-2 sm:mt-0">
+                <span class="bg-[#F26430]/10 text-[#D65020] text-xs font-bold px-3 py-1 rounded-full border border-[#F26430]/20 uppercase tracking-wider">
+                  {{ item.status }}
                 </span>
               </div>
             </div>
-            <div class="flex items-center justify-between sm:justify-end w-full sm:w-auto mt-2 sm:mt-0">
-              <span class="bg-gray-100 text-gray-500 text-xs font-bold px-3 py-1 rounded-full border border-gray-200 uppercase tracking-wider">
-                {{ item.status }}
-              </span>
+          </div>
+          
+          <div v-if="!isLoading && filteredAktif.length > 0" class="bg-[#FFF3EC] p-3 text-center border-t border-gray-100">
+            <span class="text-xs text-[#D65020] font-medium">Menampilkan {{ filteredAktif.length }} buku sedang dipinjam</span>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ========== SECTION: Riwayat Pengembalian (EXISTING) ========== -->
+      <div class="space-y-4">
+        <div class="flex items-center gap-2">
+          <ArchiveBoxIcon class="w-5 h-5 text-[#00555A]" />
+          <h2 class="text-lg font-bold text-[#00555A]">Riwayat Pengembalian</h2>
+        </div>
+
+        <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+          
+          <div v-if="isLoading" class="p-5 space-y-4">
+              <div class="h-12 bg-gray-100 rounded-lg animate-pulse w-full"></div>
+              <div class="h-12 bg-gray-100 rounded-lg animate-pulse w-full"></div>
+          </div>
+
+          <div v-else-if="filteredRiwayat.length === 0" class="p-10 text-center">
+            <p class="text-gray-400 font-medium">
+              {{ searchQuery ? 'Tidak ada riwayat yang cocok dengan pencarian.' : 'Belum ada riwayat pengembalian buku.' }}
+            </p>
+          </div>
+
+          <div v-else class="divide-y divide-gray-50">
+            <div 
+              v-for="item in filteredRiwayat" 
+              :key="item.id"
+              class="p-5 hover:bg-[#EBF2FA]/50 transition-colors flex flex-col sm:flex-row sm:items-center gap-4 group"
+            >
+              <div class="w-10 h-10 rounded-full bg-[#EBF2FA] flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                <CheckCircleIcon class="w-5 h-5 text-[#00555A]" />
+              </div>
+              <div class="flex-1">
+                <h4 class="font-bold text-gray-800 group-hover:text-[#00555A] transition-colors">{{ item.judulBuku }}</h4>
+                <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-xs text-gray-500">
+                  <span class="flex items-center gap-1">
+                    <ArrowLongRightIcon class="w-3 h-3 text-[#F26430]" />
+                    Pinjam: {{ item.tanggalPinjam }}
+                  </span>
+                  <span class="flex items-center gap-1 text-[#00555A] font-medium">
+                    <ArrowLongLeftIcon class="w-3 h-3" />
+                    Kembali: {{ item.tanggalKembali }}
+                  </span>
+                </div>
+              </div>
+              <div class="flex items-center justify-between sm:justify-end w-full sm:w-auto mt-2 sm:mt-0">
+                <span class="bg-gray-100 text-gray-500 text-xs font-bold px-3 py-1 rounded-full border border-gray-200 uppercase tracking-wider">
+                  {{ item.status }}
+                </span>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div v-if="!isLoading && filteredRiwayat.length > 0" class="bg-[#EBF2FA] p-3 text-center border-t border-gray-100">
-          <span class="text-xs text-gray-500">Menampilkan {{ filteredRiwayat.length }} data terakhir</span>
-        </div>
+          <div v-if="!isLoading && filteredRiwayat.length > 0" class="bg-[#EBF2FA] p-3 text-center border-t border-gray-100">
+            <span class="text-xs text-gray-500">Menampilkan {{ filteredRiwayat.length }} data terakhir</span>
+          </div>
 
+        </div>
       </div>
+
     </div>
 
     <!-- Modal QR Peminjaman Buku -->
@@ -278,19 +400,27 @@ import {
   ExclamationCircleIcon, ExclamationTriangleIcon, CheckCircleIcon, ArrowLongRightIcon, ArrowLongLeftIcon,
   MagnifyingGlassIcon, ClockIcon, QrCodeIcon, ArrowPathIcon, LightBulbIcon, XMarkIcon
 } from "@heroicons/vue/24/outline";
+import { Square3Stack3DIcon, FunnelIcon } from "@heroicons/vue/24/solid";
 
+// ========== State: Peminjaman User (existing) ==========
 const peminjamanAktif = ref([]);
 const riwayatPengembalian = ref([]);
 const isLoading = ref(true);
 const searchQuery = ref("");
 
+// ========== State: Katalog Buku (BARU) ==========
+const semuaBuku = ref([]);
+const kategoriOptions = ref([]);
+const filterKategori = ref("");
+const filterTahun = ref("");
+const isLoadingKatalog = ref(true);
+
+// ========== Fetch: Peminjaman User (existing) ==========
 const fetchUserBooks = async () => {
     try {
         const response = await api.get('/user/buku-saya');
-
         peminjamanAktif.value = response.data.aktif || [];
         riwayatPengembalian.value = response.data.riwayat || [];
-
     } catch (error) {
         console.error("Gagal memuat buku saya:", error);
     } finally {
@@ -298,6 +428,65 @@ const fetchUserBooks = async () => {
     }
 };
 
+// ========== Fetch: Seluruh Buku untuk Grid (BARU) ==========
+const fetchSemuaBuku = async () => {
+    try {
+        const response = await api.get('/buku');
+        semuaBuku.value = response.data || [];
+    } catch (error) {
+        console.error("Gagal memuat katalog buku:", error);
+    } finally {
+        isLoadingKatalog.value = false;
+    }
+};
+
+// ========== Fetch: Kategori dari Endpoint (BARU) ==========
+const fetchKategori = async () => {
+    try {
+        const response = await api.get('/buku/kategori');
+        kategoriOptions.value = response.data || [];
+    } catch (error) {
+        console.error("Gagal memuat kategori:", error);
+    }
+};
+
+// ========== Computed: Daftar Tahun Unik dari Data Buku (client-side, BARU) ==========
+const tahunOptions = computed(() => {
+    const years = semuaBuku.value
+        .map(b => b.tahun_buku)
+        .filter(y => y != null && y !== '');
+    return [...new Set(years)].sort((a, b) => b - a);
+});
+
+// ========== Computed: Filter Gabungan Katalog Buku (AND logic, BARU) ==========
+const filteredBuku = computed(() => {
+    let result = semuaBuku.value;
+
+    // Filter pencarian (kode_buku, judul, penulis, kategori) — case-insensitive partial match
+    if (searchQuery.value) {
+        const term = searchQuery.value.toLowerCase();
+        result = result.filter(buku => 
+            (buku.kode_buku && buku.kode_buku.toLowerCase().includes(term)) ||
+            (buku.judul && buku.judul.toLowerCase().includes(term)) ||
+            (buku.penulis && buku.penulis.toLowerCase().includes(term)) ||
+            (buku.kategori && buku.kategori.toLowerCase().includes(term))
+        );
+    }
+
+    // Filter kategori (exact match)
+    if (filterKategori.value) {
+        result = result.filter(buku => buku.kategori === filterKategori.value);
+    }
+
+    // Filter tahun (exact match)
+    if (filterTahun.value) {
+        result = result.filter(buku => String(buku.tahun_buku) === String(filterTahun.value));
+    }
+
+    return result;
+});
+
+// ========== Computed: Filter Peminjaman Aktif (existing) ==========
 const filteredAktif = computed(() => {
   if (!searchQuery.value) return peminjamanAktif.value;
   const term = searchQuery.value.toLowerCase();
@@ -306,6 +495,7 @@ const filteredAktif = computed(() => {
   );
 });
 
+// ========== Computed: Filter Riwayat (existing) ==========
 const filteredRiwayat = computed(() => {
   if (!searchQuery.value) return riwayatPengembalian.value;
   const term = searchQuery.value.toLowerCase();
@@ -314,7 +504,7 @@ const filteredRiwayat = computed(() => {
   );
 });
 
-// ========== QR Modal State ==========
+// ========== QR Modal State (existing, TIDAK DIUBAH) ==========
 const showQrModal = ref(false);
 const qrTime = ref("");
 const qrFormattedDate = ref("");
@@ -411,7 +601,12 @@ const closeQrModal = () => {
   qrValue.value = "";
 };
 
-onMounted(fetchUserBooks);
+// ========== Lifecycle ==========
+onMounted(() => {
+  fetchUserBooks();
+  fetchSemuaBuku();
+  fetchKategori();
+});
 
 onUnmounted(() => {
   stopQrTimer();

@@ -12,6 +12,17 @@ const api = axios.create({
 });
 api.interceptors.response.use(
   (response) => {
+    // Detect when backend returns HTML instead of JSON (e.g., catch-all route)
+    const contentType = response.headers['content-type'] || '';
+    if (contentType.includes('text/html') && !response.config?.responseType) {
+      console.error('API returned HTML instead of JSON. URL:', response.config?.url);
+      return Promise.reject({
+        response: {
+          status: 502,
+          data: { message: 'Server mengembalikan respons yang tidak valid. Pastikan API backend berjalan dengan benar.' }
+        }
+      });
+    }
     return response;
   },
   (error) => {

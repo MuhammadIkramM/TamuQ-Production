@@ -42,6 +42,7 @@ const router = createRouter({
         { path: "surat-bebas", name: "PengajuanSuratBebasUser", component: () => import("@/views/User/PengajuanSuratBebasUser.vue") },
         { path: "donasi", name: "PengajuanDonasiBukuUser", component: () => import("@/views/User/PengajuanDonasiBukuUser.vue") },
         { path: "layanan-buku", name: "LayananBukuUser", component: () => import("@/views/User/LayananBukuUser.vue") },
+        { path: "e-skripsi", name: "ESkripsiUser", component: () => import("@/views/User/ESkripsiUser.vue") },
         { path: "pengaturan", name: "PengaturanUser", component: () => import("@/views/User/PengaturanUser.vue") },
       ],
     },
@@ -79,6 +80,12 @@ const router = createRouter({
           path: "manajemen-buku",
           name: "ManajemenBuku",
           component: () => import("@/views/Staff/ManajemenBuku.vue"),
+          meta: { roles: ['staff', 'superadmin', 'super_admin', 'admin'] }
+        },
+        {
+          path: "manajemen-skripsi",
+          name: "ManajemenSkripsi",
+          component: () => import("@/views/Staff/ManajemenSkripsi.vue"),
           meta: { roles: ['staff', 'superadmin', 'super_admin', 'admin'] }
         },
         {
