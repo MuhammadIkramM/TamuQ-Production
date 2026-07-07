@@ -41,6 +41,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/kunjungan/scan', [VisitController::class, 'scanQr']);
         Route::post('/pengajuan/{id}/verify', [PengajuanSuratController::class, 'verify'])->middleware('throttle:30,1');
         Route::patch('/pengajuan/{id}/update-pesan', [PengajuanSuratController::class, 'updatePesan'])->middleware('throttle:30,1');
+        Route::post('/pengajuan/{id}/update-balasan', [PengajuanSuratController::class, 'updateBalasan'])->middleware('throttle:30,1');
         Route::post('/buku', [BukuController::class, 'store'])->middleware('throttle:30,1');
         Route::put('/buku/{id}', [BukuController::class, 'update'])->middleware('throttle:30,1');
         Route::delete('/buku/{id}', [BukuController::class, 'destroy'])->middleware('throttle:30,1');

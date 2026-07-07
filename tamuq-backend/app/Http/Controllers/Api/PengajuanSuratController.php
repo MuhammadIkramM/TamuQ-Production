@@ -212,6 +212,51 @@ class PengajuanSuratController extends Controller
         }
     }
 
+    public function updateBalasan(Request $request, $id)
+    {
+        if (strtolower($request->user()->role) === 'pengunjung') {
+            return response()->json(['message' => 'Unauthorized. Akses ditolak.'], 403);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'file_balasan' => 'nullable|file|mimes:pdf,jpg,png|mimetypes:application/pdf,image/jpeg,image/png|max:8192',
+            'pesan'        => 'nullable|string|max:1000'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['message' => $validator->errors()->first()], 422);
+        }
+
+        $pengajuan = PengajuanSurat::find($id);
+        if (!$pengajuan) {
+            return response()->json(['message' => 'Data tidak ditemukan'], 404);
+        }
+
+        try {
+            if ($request->hasFile('file_balasan')) {
+                if ($pengajuan->file_balasan && Storage::disk('local')->exists($pengajuan->file_balasan)) {
+                    Storage::disk('local')->delete($pengajuan->file_balasan);
+                }
+                $path = $request->file('file_balasan')->store('balasan_files', 'local');
+                $pengajuan->file_balasan = $path;
+            }
+
+            if ($request->has('pesan')) {
+                $pengajuan->pesan = $request->pesan;
+            }
+
+            $pengajuan->save();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Balasan dan keterangan berhasil diperbarui.',
+                'data' => $pengajuan
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Gagal memperbarui balasan: ' . $e->getMessage()], 500);
+        }
+    }
+
     public function downloadPendukung(Request $request, $filename)
     {
         if (!$request->user()) {
