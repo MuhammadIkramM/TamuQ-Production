@@ -68,7 +68,17 @@
         <form @submit.prevent="onSubmit" class="space-y-6">
           <div>
             <label for="nomorInduk" class="block text-sm font-semibold text-[#00555A] mb-2">Nomor Induk / NIM</label>
-            <input id="nomorInduk" v-model="form.nomorInduk" type="text" required class="appearance-none block w-full px-4 py-3 border border-slate-300 rounded-xl shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#00555A] focus:border-[#00555A] sm:text-sm bg-white transition-all" placeholder="Contoh: 12345" />
+            <input
+              id="nomorInduk"
+              v-model="form.nomorInduk"
+              type="text"
+              inputmode="numeric"
+              pattern="[0-9]*"
+              @input="validasiAngkaNomorInduk"
+              required
+              class="appearance-none block w-full px-4 py-3 border border-slate-300 rounded-xl shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#00555A] focus:border-[#00555A] sm:text-sm bg-white transition-all"
+              placeholder="Contoh: 12345"
+            />
           </div>
 
           <div>
@@ -175,6 +185,10 @@ const form = reactive({
   nomorInduk: "",
   password: "",
 });
+
+const validasiAngkaNomorInduk = () => {
+  form.nomorInduk = form.nomorInduk.replace(/[^0-9]/g, "");
+};
 
 const onSubmit = () => {
   const payload = {

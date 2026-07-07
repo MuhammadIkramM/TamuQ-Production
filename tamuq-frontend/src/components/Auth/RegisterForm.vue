@@ -65,7 +65,17 @@
 
           <div>
             <label class="block text-sm font-semibold text-[#00555A] mb-1">Nomor Induk / NIM</label>
-            <input v-model="form.nomorInduk" type="text" placeholder="Contoh: 210209501" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#00555A] focus:outline-none bg-white transition-all" pattern="[0-9]+" title="Hanya angka diperbolehkan" required />
+            <input
+              v-model="form.nomorInduk"
+              type="text"
+              inputmode="numeric"
+              @input="validasiAngkaNomorInduk"
+              placeholder="Contoh: 210209501"
+              class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#00555A] focus:outline-none bg-white transition-all"
+              pattern="[0-9]+"
+              title="Hanya angka diperbolehkan"
+              required
+            />
           </div>
 
           <div>
@@ -137,6 +147,10 @@ const form = reactive({
   password: "",
   role: "pengunjung"
 });
+
+const validasiAngkaNomorInduk = () => {
+  form.nomorInduk = form.nomorInduk.replace(/[^0-9]/g, "");
+};
 
 const onSubmit = () => {
   const payload = {
