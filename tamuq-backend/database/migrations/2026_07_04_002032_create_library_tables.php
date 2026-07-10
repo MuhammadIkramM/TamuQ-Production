@@ -123,13 +123,21 @@ return new class extends Migration
 
         Schema::create('skripsi', function (Blueprint $table) {
             $table->integer('id_skripsi')->autoIncrement();
+            $table->integer('user_id')->nullable();
+            $table->string('foto', 255)->nullable();
             $table->string('judul', 255);
+            $table->text('abstrak')->nullable();
             $table->string('nama', 100);
             $table->string('nim', 30); 
             $table->enum('prodi', ['PTIK', 'TEKOM']);
             $table->integer('tahun_selesai');
-            $table->string('file_skripsi', 255); 
+            $table->string('file_skripsi', 255);
+            $table->string('file_preview_skripsi', 255)->nullable();
+            $table->enum('status', ['menunggu', 'disetujui', 'ditolak'])->default('menunggu');
+            $table->text('keterangan')->nullable();
             $table->timestamps();
+
+            $table->foreign('user_id')->references('id_user')->on('users')->onDelete('set null');
         });
 
         Schema::create('settings', function (Blueprint $table) {

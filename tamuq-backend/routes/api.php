@@ -31,8 +31,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/buku', [BukuController::class, 'index']);
     Route::get('/buku/kategori', [BukuController::class, 'kategoriList']);
     Route::get('/skripsi', [SkripsiController::class, 'index']);
+    Route::get('/skripsi/saya', [SkripsiController::class, 'riwayatSaya']);
     Route::get('/skripsi/{id}/preview', [SkripsiController::class, 'preview'])->middleware('throttle:60,1');
     Route::get('/skripsi/{id}/download', [SkripsiController::class, 'download'])->middleware('throttle:60,1');
+    Route::post('/skripsi', [SkripsiController::class, 'ajukan'])->middleware('throttle:20,1');
+    Route::get('/skripsi/{id}/preview-file', [SkripsiController::class, 'previewFilePreview'])->middleware('throttle:60,1');
+    Route::get('/skripsi/{id}/download-file', [SkripsiController::class, 'downloadFilePreview'])->middleware('throttle:60,1');
 
     Route::middleware('role:staff')->group(function () {
         Route::get('/staff/dashboard', [DashboardController::class, 'index']);
@@ -48,6 +52,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/staff/skripsi', [SkripsiController::class, 'store'])->middleware('throttle:30,1');
         Route::post('/staff/skripsi/{id}', [SkripsiController::class, 'update'])->middleware('throttle:30,1');
         Route::delete('/staff/skripsi/{id}', [SkripsiController::class, 'destroy'])->middleware('throttle:30,1');
+        Route::post('/staff/skripsi/{id}/verify', [SkripsiController::class, 'verify'])->middleware('throttle:30,1');
         Route::get('/staff/users-list', [PeminjamanController::class, 'getUsersList']);
         Route::get('/staff/peminjaman', [PeminjamanController::class, 'indexAdmin']);
         Route::post('/staff/peminjaman', [PeminjamanController::class, 'store']);
