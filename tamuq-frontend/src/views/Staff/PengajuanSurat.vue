@@ -404,7 +404,6 @@
       </div>
     </transition>
 
-    <!-- Modal Edit Keterangan -->
     <transition name="fade">
       <div v-if="editPesanModal.show" class="fixed inset-0 flex items-center justify-center z-[60] bg-[#00282a]/50 backdrop-blur-sm p-4" @click.self="closeEditPesanModal">
         <div class="bg-white shadow-2xl rounded-2xl w-full max-w-md overflow-hidden transform transition-all scale-100">
@@ -443,7 +442,6 @@
       </div>
     </transition>
 
-    <!-- Modal Preview File User -->
     <transition name="fade">
       <div v-if="fileUserPreview.show" class="fixed inset-0 flex items-center justify-center z-[80] bg-[#00282a]/70 backdrop-blur-sm p-4" @click.self="closeFileUserPreview">
         <div class="bg-white shadow-2xl rounded-2xl w-full max-w-4xl h-[85vh] flex flex-col overflow-hidden transform transition-all scale-100">
@@ -664,7 +662,6 @@ const proceedReject = async () => {
   }
 };
 
-// Edit Pesan Modal
 const editPesanModal = ref({ show: false, pengajuan: null, pesan: '' });
 const isUpdatingPesan = ref(false);
 
@@ -704,7 +701,6 @@ const submitEditPesan = async () => {
   }
 };
 
-// File User Preview Modal
 const fileUserPreview = ref({ show: false, url: '', type: '', isLoading: false, filePath: '' });
 
 const openFileUserPreview = async (pengajuan) => {

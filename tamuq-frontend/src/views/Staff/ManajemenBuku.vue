@@ -29,7 +29,26 @@
       </div>
     </div>
 
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="flex items-center gap-2 border-b border-gray-200">
+      <button 
+        @click="activeMainTab = 'Katalog Buku & Stok'"
+        class="px-4 py-2.5 text-sm font-bold border-b-2 transition-colors flex items-center gap-2"
+        :class="activeMainTab === 'Katalog Buku & Stok' ? 'border-[#00555A] text-[#00555A]' : 'border-transparent text-gray-500 hover:text-gray-700'"
+      >
+        <Square3Stack3DIcon class="w-5 h-5" />
+        Katalog Buku & Stok
+      </button>
+      <button 
+        @click="activeMainTab = 'Sirkulasi & Riwayat'"
+        class="px-4 py-2.5 text-sm font-bold border-b-2 transition-colors flex items-center gap-2"
+        :class="activeMainTab === 'Sirkulasi & Riwayat' ? 'border-[#00555A] text-[#00555A]' : 'border-transparent text-gray-500 hover:text-gray-700'"
+      >
+        <ClockIcon class="w-5 h-5" />
+        Sirkulasi & Riwayat
+      </button>
+    </div>
+
+    <div v-show="activeMainTab === 'Katalog Buku & Stok'" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
       <div class="p-5 flex flex-col md:flex-row md:items-center justify-between bg-[#00555A] gap-4 rounded-t-2xl">
         <div class="flex items-center gap-3">
           <h3 class="text-lg font-bold text-white flex items-center gap-2">
@@ -154,7 +173,8 @@
       </div>
     </div>
 
-    <div class="flex flex-col sm:flex-row justify-between items-end sm:items-center mt-6 mb-2 gap-4">
+    <div v-show="activeMainTab === 'Sirkulasi & Riwayat'" class="space-y-6">
+      <div class="flex flex-col sm:flex-row justify-between items-end sm:items-center mt-6 mb-2 gap-4">
       <h2 class="text-lg font-bold text-[#00555A]">Sirkulasi & Riwayat</h2>
       <div class="relative w-full sm:w-80">
         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -169,7 +189,7 @@
       </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden h-fit">
         <div class="p-5 flex justify-between items-center bg-[#00555A] rounded-t-2xl">
           <h3 class="text-lg font-bold text-white flex items-center gap-2">
@@ -304,8 +324,8 @@
         </div>
       </div>
     </div>
+    </div>
 
-    <!-- Modal Form Peminjaman -->
     <transition name="fade">
       <div v-if="showPinjamModal" class="fixed inset-0 flex items-center justify-center z-50 bg-[#00282a]/50 backdrop-blur-sm p-4" @click.self="cancelPinjam">
         <div class="bg-white shadow-2xl rounded-2xl w-full max-w-md overflow-visible transform transition-all scale-100">
@@ -425,7 +445,6 @@
 
     <div v-if="showUserDropdown || showBookDropdown" @click="closeDropdowns" class="fixed inset-0 z-40 bg-transparent"></div>
 
-    <!-- Modal Tambah/Edit Buku -->
     <transition name="fade">
       <div v-if="showBookModal" class="fixed inset-0 flex items-center justify-center z-50 bg-[#00282a]/50 backdrop-blur-sm p-4" @click.self="cancelBook">
         <div class="bg-white shadow-2xl rounded-2xl w-full max-w-md overflow-hidden transform transition-all scale-100">
@@ -489,7 +508,6 @@
       </div>
     </transition>
 
-    <!-- Alert/Confirm Modal -->
     <transition name="fade">
       <div v-if="alertState.show" class="fixed inset-0 flex items-center justify-center z-[100] bg-[#00282a]/40 backdrop-blur-sm p-4">
         <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center transform transition-all scale-100 border-t-4"
@@ -535,8 +553,6 @@
       </div>
     </transition>
 
-    <!-- QR Preview Modal -->
-    <!-- CHANGED: Hover pada QR besar memunculkan blur + tombol download -->
     <transition name="fade">
       <div v-if="showQrPreview" class="fixed inset-0 flex items-center justify-center z-50 bg-[#00282a]/50 backdrop-blur-sm p-4" @click.self="closeQrPreview">
         <div class="bg-white shadow-2xl rounded-2xl p-8 max-w-sm w-full text-center relative">
@@ -545,7 +561,6 @@
           </button>
           <h3 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-1">QR Label Buku</h3>
           <p class="text-xs text-gray-400 mb-6">Arahkan kursor untuk mengunduh</p>
-          <!-- Hover di sini: blur QR + muncul tombol download -->
           <div 
             class="relative inline-block group/preview cursor-pointer" 
             data-qr-container
@@ -573,7 +588,6 @@
       </div>
     </transition>
 
-    <!-- Mode Selection Modal -->
     <transition name="fade">
       <div v-if="showModeModal" class="fixed inset-0 flex items-center justify-center z-50 bg-[#00282a]/50 backdrop-blur-sm p-4" @click.self="showModeModal = false">
         <div class="bg-white shadow-2xl rounded-2xl w-full max-w-md overflow-hidden">
@@ -597,7 +611,6 @@
       </div>
     </transition>
 
-    <!-- Scan Modal -->
     <transition name="fade">
       <div v-if="showScanModal" class="fixed inset-0 flex items-center justify-center z-50 bg-[#00282a]/50 backdrop-blur-sm p-4" @click.self="closeScanModal">
         <div class="bg-white shadow-2xl rounded-2xl w-full max-w-lg overflow-hidden">
@@ -609,7 +622,6 @@
             <button @click="closeScanModal" class="text-gray-400 hover:text-gray-600"><XMarkIcon class="w-6 h-6" /></button>
           </div>
           
-          <!-- Camera Area -->
           <div class="relative h-[300px] bg-black overflow-hidden">
             <qrcode-stream 
               @detect="onScanDetect" 
@@ -632,7 +644,6 @@
                 <p class="text-gray-400 text-sm">{{ scanCameraError }}</p>
               </div>
 
-              <!-- Scan overlay with corners and line -->
               <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <div class="relative w-48 h-48 border-2 border-white/30 rounded-3xl overflow-hidden">
                   <div class="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-[#F26430] rounded-tl-lg"></div>
@@ -645,7 +656,6 @@
             </qrcode-stream>
           </div>
           
-          <!-- Status Chips & Actions -->
           <div class="p-5 space-y-4">
             <div class="flex gap-3">
               <div 
@@ -718,7 +728,6 @@ setZXingModuleOverrides({
   },
 });
 
-// ==================== STATE ====================
 const listUsers = ref([]); 
 const searchUser = ref(""); 
 const showUserDropdown = ref(false);
@@ -728,7 +737,9 @@ const searchBook = ref("");
 const showBookDropdown = ref(false); 
 const selectedBookId = ref(null); 
 
+const activeMainTab = ref('Katalog Buku & Stok');
 const searchSirkulasi = ref("");
+const activeSirkulasiTab = ref('Sedang Dipinjam');
 const searchKatalog = ref(""); 
 
 const showPinjamModal = ref(false);
@@ -771,7 +782,6 @@ const scanProcessing = ref(false);
 const lastScannedUserToken = ref('');
 let lastScanTime = 0;
 
-// ==================== COMPUTED ====================
 const isPinjamFormValid = computed(() => {
   const isPhoneValid = /^[0-9]+$/.test(newPinjam.value.noHp);
   return selectedUserId.value && selectedBookId.value && newPinjam.value.tanggalPinjam && newPinjam.value.tanggalKembali && newPinjam.value.noHp && isPhoneValid;
@@ -829,7 +839,6 @@ const filteredRiwayatPengembalian = computed(() => {
   );
 });
 
-// ==================== METHODS ====================
 const getInitials = (name) => {
     if(!name) return '?';
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
@@ -1055,7 +1064,6 @@ const deleteBuku = (buku) => {
   });
 }
 
-// --- QR Preview ---
 const openQrPreview = (kodeBuku) => {
   previewKodeBuku.value = kodeBuku;
   showQrPreview.value = true;
@@ -1066,8 +1074,6 @@ const closeQrPreview = () => {
   previewKodeBuku.value = "";
 };
 
-// --- QR Download as PNG ---
-// Dipanggil dari modal preview (data-qr-container ada di sana)
 const downloadQrPng = (kodeBuku, event) => {
   event.stopPropagation();
   const container = event.target.closest('[data-qr-container]');
@@ -1106,7 +1112,6 @@ const downloadQrPng = (kodeBuku, event) => {
   img.src = url;
 };
 
-// --- Mode Selection ---
 const openManualMode = () => {
   showModeModal.value = false;
 
@@ -1143,7 +1148,6 @@ const closeScanModal = () => {
   showScanModal.value = false;
 };
 
-// --- Scan Camera ---
 const onScanCameraReady = () => {
   scanCameraLoading.value = false;
 };
