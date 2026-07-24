@@ -7,7 +7,7 @@
 <p align="center">
   <strong>Robust RESTful API for Smart Library Guestbook & Management System</strong>
   <br>
-  <em>Pusat Data & Logika Bisnis — Sistem Manajemen Perpustakaan JTIK UNM</em>
+  <em>Pusat Data, Document Streaming & Logika Bisnis — Sistem Manajemen Perpustakaan JTIK UNM</em>
 </p>
 
 <p align="center">
@@ -23,7 +23,8 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Status-Production_Ready-brightgreen?style=flat-square" alt="Status"/>
   <img src="https://img.shields.io/badge/API_Version-v1.0-blue?style=flat-square" alt="API Version"/>
-  <img src="https://img.shields.io/badge/HKI-Terdaftar_DJKI-gold?style=flat-square" alt="HKI"/>
+  <a href="#️-hak-cipta"><img src="https://img.shields.io/badge/HKI-Terdaftar_DJKI-gold?style=flat-square" alt="HKI"/></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/License-Academic_Use-F26430?style=flat-square" alt="License"/></a>
   <img src="https://img.shields.io/badge/Institusi-JTIK_UNM-red?style=flat-square" alt="JTIK UNM"/>
 </p>
 
@@ -33,7 +34,7 @@
 
 Repositori ini adalah **otak (backend service)** dari sistem **TamuQ** — platform manajemen perpustakaan cerdas yang dikembangkan untuk Jurusan Teknik Informatika dan Komputer (JTIK), Universitas Negeri Makassar (UNM).
 
-Backend ini dibangun di atas **Laravel 12** dan berfungsi sebagai pusat data serta penyedia RESTful API yang dikonsumsi oleh aplikasi frontend (Vue 3). Seluruh operasi sistem — mulai dari autentikasi pengguna, pencatatan kunjungan melalui pemindaian QR Code, sirkulasi peminjaman buku, hingga validasi pengajuan surat bebas pustaka — diproses dan dikelola di sini.
+Backend ini dibangun di atas **Laravel 12** dan berfungsi sebagai pusat data, penyedia document streaming PDF inline, serta RESTful API yang dikonsumsi oleh aplikasi frontend (Vue 3). Seluruh operasi sistem — mulai dari autentikasi pengguna, pencatatan kunjungan melalui pemindaian QR Code, sirkulasi peminjaman buku, pengajuan repositori skripsi digital (E-Skripsi), hingga validasi pengajuan surat bebas pustaka — diproses dan dikelola di sini.
 
 ### 🎯 Apa yang Dilayani API Ini?
 
@@ -41,10 +42,11 @@ Backend ini dibangun di atas **Laravel 12** dan berfungsi sebagai pusat data ser
 |---|---|
 | 🔐 **Autentikasi** | Login, registrasi, dan manajemen sesi berbasis Laravel Sanctum |
 | 📱 **Kunjungan QR** | Generate token QR satu-kali-pakai & verifikasi scan oleh staff |
-| 📚 **Sirkulasi Buku** | Pencatatan peminjaman, pengembalian, dan riwayat per user |
-| 📄 **Pengajuan Surat** | Pengajuan dan verifikasi surat bebas pustaka & donasi buku |
+| 📚 **Sirkulasi Buku** | Pencatatan peminjaman, pengembalian, kategori dinamis, dan scan user kilat |
+| 🎓 **E-Skripsi Digital** | Pengajuan skripsi mahasiswa, verifikasi staff, katalog publik, dan streaming PDF inline |
+| 📄 **Pengajuan Surat** | Pengajuan dan verifikasi surat bebas pustaka, donasi buku, & preview dokumen inline |
 | 👤 **Manajemen User** | CRUD akun pengguna khusus role `superadmin` |
-| 📊 **Dashboard Staff** | Statistik pengunjung harian, stok buku, dan status perpustakaan |
+| 📊 **Dashboard Staff** | Statistik pengunjung harian, stok buku, dan status operasional perpustakaan |
 
 ---
 
@@ -69,12 +71,13 @@ app/Http/Controllers/
 ├── Api/
 │   ├── AuthController.php          # Login, Register, Profile, Password
 │   ├── QrCodeController.php        # Generate QR Token (30 detik TTL)
-│   ├── PengajuanSuratController.php# Pengajuan & Verifikasi Surat
+│   ├── PengajuanSuratController.php# Pengajuan, Verifikasi & Preview Surat
+│   ├── SkripsiController.php       # E-Skripsi: Pengajuan, Verifikasi & PDF Stream
 │   └── AdminUserController.php     # CRUD User (superadmin only)
 ├── VisitController.php             # Scan QR & Riwayat Kunjungan
-├── PeminjamanController.php        # Sirkulasi Peminjaman Buku
-├── BukuController.php              # Manajemen Katalog Buku
-└── DashboardController.php         # Statistik & Status Perpustakaan
+├── PeminjamanController.php        # Sirkulasi Peminjaman Buku & Fast Scan User
+├── BukuController.php              # Manajemen Katalog & Kategori Buku
+└── DashboardController.php         # Statistik & Status Operasional Perpustakaan
 ```
 
 ### 🗃️ Entitas Database (Models)
@@ -87,14 +90,15 @@ app/Models/
 ├── Buku.php                # Tabel: buku        | PK: id_buku
 ├── Peminjaman.php          # Tabel: peminjaman  | PK: id_peminjaman
 ├── RiwayatPengembalian.php # Tabel: riwayat_pengembalian
-└── PengajuanSurat.php      # Tabel: pengajuan_surats | FK: user_id
+├── PengajuanSurat.php      # Tabel: pengajuan_surats | FK: user_id
+└── Skripsi.php             # Tabel: skripsi     | PK: id_skripsi, FK: user_id
 ```
 
 ---
 
 ## 📡 Referensi Endpoint API
 
-> **Base URL (Production):** `https://tamuq-api.onrender.com/api`
+> **Base URL (Production):** `https://tamuq.my.id/api` (atau `https://tamuq-api.onrender.com/api`)
 > 
 > **Base URL (Lokal):** `http://localhost:8000/api`
 
@@ -159,21 +163,6 @@ Semua endpoint di bawah memerlukan sesi aktif (cookie Sanctum).
 | `POST` | `/api/user/update-profile` | Memperbarui nama dan/atau foto profil (`multipart/form-data`) |
 | `POST` | `/api/user/update-password` | Mengubah password (memerlukan `current_password`) |
 
-**Request Body `update-profile` (`multipart/form-data`):**
-```
-nama_lengkap : string (opsional)
-foto         : file image (max 5MB, opsional)
-```
-
-**Request Body `update-password`:**
-```json
-{
-  "current_password": "password_lama",
-  "new_password": "password_baru",
-  "new_password_confirmation": "password_baru"
-}
-```
-
 ---
 
 ### 📱 Modul 3 — Kunjungan & QR Code (Auth Required)
@@ -187,37 +176,6 @@ Alur kunjungan: **Pengunjung generate QR → Staff scan QR → Kunjungan tercata
 | `GET`  | `/api/kunjungan/history` | semua | Riwayat kunjungan (staff: semua user, pengunjung: milik sendiri) |
 | `GET`  | `/api/library-status` | semua | Cek status buka/tutup perpustakaan |
 
-**Response `GET /api/qr/generate` (`200 OK`):**
-```json
-{
-  "status": "success",
-  "qr_code": "Kj3xLmNpQ7rStUvWxYzAb...",
-  "expires_in": 30
-}
-```
-
-**Request Body `POST /api/kunjungan/scan`:**
-```json
-{
-  "qr_code": "Kj3xLmNpQ7rStUvWxYzAb..."
-}
-```
-
-**Response Sukses Scan (`200 OK`):**
-```json
-{
-  "status": "success",
-  "message": "Scan Berhasil",
-  "data": {
-    "nama_lengkap": "Muhammad Ikram",
-    "nomor_induk": "220209501001",
-    "prodi": "PTIK",
-    "foto": null,
-    "waktu": "2026-06-07 14:30:00"
-  }
-}
-```
-
 ---
 
 ### 📚 Modul 4 — Katalog & Sirkulasi Buku (Auth Required)
@@ -225,6 +183,7 @@ Alur kunjungan: **Pengunjung generate QR → Staff scan QR → Kunjungan tercata
 | Method | Endpoint | Role | Keterangan |
 |--------|----------|------|------------|
 | `GET`    | `/api/buku` | semua | Mengambil seluruh daftar buku di katalog |
+| `GET`    | `/api/buku/kategori` | semua | Mengambil daftar kategori buku unik/dinamis |
 | `POST`   | `/api/buku` | `staff` | Menambahkan buku baru ke katalog |
 | `PUT`    | `/api/buku/{id}` | `staff` | Memperbarui data buku |
 | `DELETE` | `/api/buku/{id}` | `staff` | Menghapus buku dari katalog |
@@ -233,49 +192,82 @@ Alur kunjungan: **Pengunjung generate QR → Staff scan QR → Kunjungan tercata
 | `POST`   | `/api/staff/peminjaman` | `staff` | Mencatat transaksi peminjaman buku baru |
 | `POST`   | `/api/staff/peminjaman/{id}/return` | `staff` | Mencatat pengembalian buku |
 | `GET`    | `/api/staff/users-list` | `staff` | Daftar user untuk keperluan form peminjaman |
+| `POST`   | `/api/staff/peminjaman/scan-user` | `staff` | Fast user scan via QR token untuk peminjaman |
 
-**Request Body `POST /api/staff/peminjaman`:**
+**Request Body `POST /api/staff/peminjaman/scan-user`:**
 ```json
 {
-  "id_user": 5,
-  "id_buku": 12,
-  "tanggalPinjam": "2026-06-07",
-  "tanggalKembali": "2026-06-14",
-  "noHp": "081234567890"
+  "qr_code": "Kj3xLmNpQ7rStUvWxYzAb..."
 }
 ```
 
-> 📌 **Catatan:** Sistem menggunakan **database transaction dengan lock** saat proses peminjaman untuk mencegah race condition pada stok buku yang sama.
+**Response Sukses (`200 OK`):**
+```json
+{
+  "status": "success",
+  "data": {
+    "id_user": 5,
+    "nama_lengkap": "Muhammad Ikram Muslimin",
+    "nomor_induk": "210209502028",
+    "prodi": "PTIK"
+  }
+}
+```
 
 ---
 
-### 📄 Modul 5 — Pengajuan Surat (Auth Required)
+### 📄 Modul 5 — Pengajuan Surat & Document Stream (Auth Required)
 
-Mendukung dua jenis pengajuan: **Bebas Perpustakaan** dan **Donasi Buku**. Khusus donasi buku, sistem secara otomatis mengirim notifikasi ke Google Spreadsheet via webhook.
+Mendukung dua jenis pengajuan: **Bebas Perpustakaan** dan **Donasi Buku**. Dilengkapi endpoint streaming PDF & image inline serta fitur pembaruan balasan/pesan tanpa membatalkan proses verifikasi awal.
 
 | Method | Endpoint | Role | Keterangan |
 |--------|----------|------|------------|
-| `GET`  | `/api/pengajuan` | semua | Daftar pengajuan (staff: semua, pengunjung: milik sendiri) |
-| `POST` | `/api/pengajuan` | `pengunjung` | Membuat pengajuan baru (upload `file_pendukung`) |
-| `POST` | `/api/pengajuan/{id}/verify` | `staff` | Verifikasi pengajuan + upload `file_balasan` |
-| `GET`  | `/api/download-pendukung/{filename}` | semua | Unduh file dokumen pendukung |
-| `GET`  | `/api/download-balasan/{filename}` | semua | Unduh file surat balasan dari staff |
+| `GET`   | `/api/pengajuan` | semua | Daftar pengajuan (staff: semua, pengunjung: milik sendiri) |
+| `POST`  | `/api/pengajuan` | `pengunjung` | Membuat pengajuan baru (upload `file_pendukung`) |
+| `POST`  | `/api/pengajuan/{id}/verify` | `staff` | Verifikasi pengajuan (`Diterima`/`Ditolak`) + upload `file_balasan` |
+| `PATCH` | `/api/pengajuan/{id}/update-pesan` | `staff` | Mengubah pesan/keterangan verifikasi pengajuan |
+| `POST`  | `/api/pengajuan/{id}/update-balasan` | `staff` | Mengubah file balasan & pesan verifikasi pengajuan |
+| `GET`   | `/api/download-pendukung/{filename}` | semua | Unduh file dokumen pendukung |
+| `GET`   | `/api/download-balasan/{filename}` | semua | Unduh file surat balasan dari staff |
+| `GET`   | `/api/preview-pendukung/{filename}` | semua | Stream/preview inline dokumen pendukung (PDF/Image) |
+| `GET`   | `/api/preview-balasan/{filename}` | semua | Stream/preview inline surat balasan (PDF/Image) |
 
-**Request Body `POST /api/pengajuan` (`multipart/form-data`):**
+---
+
+### 🎓 Modul 8 — E-Skripsi & Repositori Digital (Auth Required)
+
+Modul ini dikhususkan untuk repositori karya ilmiah/skripsi digital mahasiswa JTIK UNM, mendukung pengunggahan skripsi penuh + lembar pengesahan (preview), katalog publik skripsi disetujui, dan streaming PDF inline.
+
+| Method | Endpoint | Role | Keterangan |
+|--------|----------|------|------------|
+| `GET`    | `/api/skripsi` | semua | Mengambil katalog skripsi (pengunjung: disetujui saja; staff: semua/filter `status`) |
+| `GET`    | `/api/skripsi/saya` | `pengunjung` | Mengambil riwayat pengajuan skripsi milik user yang sedang login |
+| `POST`   | `/api/skripsi` | `pengunjung` | Mengajukan skripsi baru (`file_skripsi`, `file_preview_skripsi`, `foto`) |
+| `GET`    | `/api/skripsi/{id}/preview` | semua | Stream/preview inline file skripsi utama (PDF) |
+| `GET`    | `/api/skripsi/{id}/download` | semua | Mengunduh file skripsi utama (PDF) |
+| `GET`    | `/api/skripsi/{id}/preview-file` | semua | Stream/preview inline file lembar pengesahan/preview (PDF) |
+| `GET`    | `/api/skripsi/{id}/download-file` | semua | Mengunduh file lembar pengesahan/preview (PDF) |
+| `POST`   | `/api/staff/skripsi` | `staff` | Menambahkan data skripsi baru langsung oleh staff (status auto `disetujui`) |
+| `POST`   | `/api/staff/skripsi/{id}` | `staff` | Memperbarui data skripsi yang sudah ada |
+| `DELETE` | `/api/staff/skripsi/{id}` | `staff` | Menghapus data skripsi dari repositori |
+| `POST`   | `/api/staff/skripsi/{id}/verify` | `staff` | Verifikasi status skripsi (`disetujui` / `ditolak` + `keterangan`) |
+
+#### `POST /api/skripsi` (`multipart/form-data`)
 ```
-jenis          : "Bebas Perpustakaan" | "Donasi Buku"  (wajib)
-file_pendukung : file PDF/JPG/PNG, max 5MB              (wajib)
-no_hp          : string                                  (opsional)
-alamat         : string                                  (opsional)
-jabatan        : string                                  (opsional)
-judul_buku     : string, jika Donasi Buku               (opsional)
+judul                : string (wajib)
+abstrak              : string (wajib)
+tahun_selesai        : integer (wajib, contoh: 2026)
+foto                 : image file (opsional, max 5MB)
+file_skripsi         : pdf file (wajib, max 20MB)
+file_preview_skripsi : pdf file (opsional, max 10MB)
 ```
 
-**Status Alur Pengajuan:**
-
-```
-[Menunggu Verifikasi] → [Selesai] (jika diterima + file balasan diupload)
-                      ↘ [Ditolak] (jika ditolak oleh staff)
+#### `POST /api/staff/skripsi/{id}/verify`
+```json
+{
+  "status": "disetujui",
+  "keterangan": "Skripsi Diterima, Harap Cek Skripsi Di Katalog Skripsi"
+}
 ```
 
 ---
@@ -299,18 +291,6 @@ Endpoint ini **eksklusif** untuk akun dengan role `superadmin`.
 |--------|----------|------------|
 | `GET`  | `/api/staff/dashboard` | Statistik lengkap: total buku, pengunjung hari ini, peminjaman aktif, data chart |
 | `POST` | `/api/staff/library-status` | Toggle status buka/tutup perpustakaan |
-
-**Response `GET /api/staff/dashboard`:**
-```json
-{
-  "is_open": true,
-  "total_buku": 245,
-  "pengunjung_hari_ini": 38,
-  "peminjaman_aktif": 12,
-  "chart_data": [5, 12, 8, 9, 4],
-  "demografi": [180, 65]
-}
-```
 
 ---
 
@@ -368,102 +348,55 @@ API Anda sekarang berjalan di: **`http://localhost:8000`** 🎉
 
 ## 🚀 Kesiapan Deployment (Cloud-Ready)
 
-Backend ini telah dikonfigurasi secara penuh untuk deployment production di lingkungan cloud. Terdapat dua berkas konfigurasi deployment di root direktori:
+Backend ini telah dikonfigurasi secara penuh untuk deployment production di lingkungan cloud via Docker & Render.com. Terdapat berkas `Dockerfile` dan `render.yaml` di root backend.
 
-### 🐳 `Dockerfile` — Containerization
+---
 
-Berkas `Dockerfile` mendefinisikan cara membungkus seluruh aplikasi Laravel beserta semua dependensinya ke dalam sebuah **Docker container** yang portabel dan konsisten. Konfigurasi ini mencakup:
+## ⚖️ Hak Cipta
 
-- **Base Image:** `php:8.2-apache` — PHP 8.2 dengan server Apache
-- **Driver Database:** Menginstal ekstensi `pdo_pgsql` untuk koneksi PostgreSQL
-- **Web Server:** Mengaktifkan `mod_rewrite` Apache untuk mendukung URL routing Laravel
-- **Composer:** Dependensi di-install dengan flag `--no-dev --optimize-autoloader` untuk performa production
-- **Permissions:** Folder `storage/` dan `bootstrap/cache/` dikonfigurasi agar dapat ditulis oleh server
+<div align="center">
 
-```bash
-# Build Docker image secara manual
-docker build -t tamuq-backend .
-
-# Jalankan container
-docker run -p 8000:80 --env-file .env tamuq-backend
+```
+╔══════════════════════════════════════════════════════════════════════╗
+║             HAK KEKAYAAN INTELEKTUAL (HKI) — TERDAFTAR               ║
+╠══════════════════════════════════════════════════════════════════════╣
+║  Nama Program  : TamuQ - Smart Library Guestbook &                  ║
+║                  Management System                                   ║
+║  Jenis Ciptaan : Program Komputer                                    ║
+║  Institusi     : Jurusan Teknik Informatika dan Komputer (JTIK)     ║
+║                  Universitas Negeri Makassar (UNM)                  ║
+║  Lembaga HKI   : DJKI — Direktorat Jenderal Kekayaan Intelektual   ║
+║                  Kementerian Hukum dan HAM Republik Indonesia        ║
+║  Status        : ✅ Terdaftar Resmi & Dilindungi Undang-Undang      ║
+╚══════════════════════════════════════════════════════════════════╝
 ```
 
----
+</div>
 
-### ☁️ `render.yaml` — Otomatisasi Deployment ke Render
+Seluruh kode sumber backend service ini merupakan bagian tak terpisahkan dari **Sistem TamuQ**, karya cipta yang dilindungi oleh **Undang-Undang Republik Indonesia Nomor 28 Tahun 2014 tentang Hak Cipta** dan terdaftar secara resmi di Direktorat Jenderal Kekayaan Intelektual (DJKI), Kementerian Hukum dan HAM Republik Indonesia melalui **2 (dua) Surat Pencatatan Ciptaan**:
 
-Berkas `render.yaml` adalah **Infrastructure as Code** untuk platform [Render.com](https://render.com). File ini memungkinkan Render secara otomatis mendeteksi konfigurasi layanan tanpa perlu pengaturan manual via dashboard.
-
-```yaml
-# Konfigurasi aktif render.yaml:
-services:
-  - type: web
-    name: tamuq-api
-    env: php
-    region: singapore         # Server di region Asia Tenggara
-    plan: free
-    buildCommand: composer install --no-dev --optimize-autoloader
-    startCommand: php artisan serve --host=0.0.0.0 --port=10000
-```
-
-> 💡 **Variabel Lingkungan Sensitif** seperti `APP_KEY` dan `DATABASE_URL` dikonfigurasi langsung di dashboard Render (tidak di-commit ke repositori) dengan flag `sync: false`.
+| Sertifikat 1 | Sertifikat 2 |
+|---|---|
+| **Judul Ciptaan:**<br/>TamuQ: Sistem Buku Tamu Digital dan Manajemen Layanan Perpustakaan JTIK UNM | **Judul Ciptaan:**<br/>Logic System Website TamuQ: Buku Tamu Perpustakaan JTIK UNM |
+| **Jenis Ciptaan:** Program Komputer | **Jenis Ciptaan:** Program Komputer |
+| **Nomor Pencatatan:** `001348850` | **Nomor Pencatatan:** `001348857` |
+| **Permohonan:** EC002026114925 (15 Juli 2026) | **Permohonan:** EC002026114926 (15 Juli 2026) |
+| **Pencipta (Sesuai Urutan Resmi):**<br/>1. Prof. Dr. H. Ruslan, M.Pd.<br/>2. Muhammad Ikram Muslimin<br/>3. Ayu Tri Wardani S.Pd., M.Pd. | **Pencipta (Sesuai Urutan Resmi):**<br/>1. Ayu Tri Wardani S.Pd., M.Pd.<br/>2. Muhammad Ikram Muslimin<br/>3. Prof. Dr. H. Ruslan, M.Pd. |
+| **Pemegang Hak Cipta:**<br/>Universitas Negeri Makassar | **Pemegang Hak Cipta:**<br/>Universitas Negeri Makassar |
+| **Pengumuman Pertama:**<br/>15 Juli 2026, di Kota Makassar | **Pengumuman Pertama:**<br/>15 Juli 2026, di Kota Makassar |
 
 ---
 
-## 🔒 Keamanan & Autentikasi
+## 👨‍💻 Pengembang
 
-### Laravel Sanctum (Cookie-Based Auth)
+Backend service ini **dibangun dan dikembangkan oleh [Muhammad Ikram Muslimin](https://github.com/MuhammadIkramM)** sebagai pengembang utama (lead developer) dalam rangka penyusunan **tugas akhir / skripsi** di JTIK UNM. Muhammad Ikram Muslimin memegang peranan penuh atas perancangan arsitektur API, skema basis data, logika bisnis, dan integrasi document stream, serta tercatat secara resmi sebagai salah satu **Pencipta** dalam kedua Surat Pencatatan Ciptaan DJKI di atas.
 
-API ini menggunakan **Laravel Sanctum** sebagai mekanisme autentikasi. Sanctum dipilih karena kemampuannya mendukung **SPA (Single Page Application) Authentication** melalui cookie sesi yang HttpOnly dan aman — ideal untuk frontend berbasis Vue 3.
-
-Alur autentikasi:
-1. Frontend melakukan `POST /api/login` dengan kredensial.
-2. Sanctum mengeluarkan **session cookie** yang disimpan di browser.
-3. Setiap request berikutnya secara otomatis menyertakan cookie tersebut.
-4. Middleware `auth:sanctum` memvalidasi cookie di setiap endpoint terproteksi.
-
-### Middleware Keamanan Tambahan
-
-| Mekanisme | Detail |
-|-----------|--------|
-| **Rate Limiting** | Login & registrasi dibatasi 50 percobaan/IP untuk mencegah brute-force |
-| **Role Middleware** | `role:staff` dan `role:superadmin` memisahkan akses secara ketat |
-| **Input Validation** | Semua input divalidasi dengan `Validator` Laravel + regex sanitasi |
-| **File Security** | File upload hanya menerima `pdf`, `jpg`, `jpeg`, `png` dengan ukuran max 5MB |
-| **DB Transaction** | Operasi kritis (peminjaman) menggunakan `DB::beginTransaction()` + row lock |
-
----
-
-## 📋 Ringkasan Kode HTTP Respons
-
-| Kode | Arti |
-|------|------|
-| `200` | OK — Request berhasil diproses |
-| `201` | Created — Data baru berhasil dibuat |
-| `400` | Bad Request — QR sudah dipakai / stok habis |
-| `401` | Unauthorized — Sesi tidak valid / belum login |
-| `403` | Forbidden — Hak akses tidak mencukupi |
-| `404` | Not Found — Data yang diminta tidak ditemukan |
-| `422` | Unprocessable Entity — Validasi input gagal |
-| `429` | Too Many Requests — Rate limit terlampaui |
-| `500` | Internal Server Error — Kesalahan di sisi server |
-
----
-
-## ⚖️ Lisensi & Hak Kekayaan Intelektual
-
-> **⚠️ Hak Cipta Dilindungi Undang-Undang**
-
-Source code backend service ini merupakan bagian integral dari **Sistem TamuQ — Smart Library Guestbook & Management System**, sebuah karya cipta intelektual yang dikembangkan oleh Muhammad Ikram Muslimin, Mahasiswa **Jurusan Teknik Informatika dan Komputer (JTIK), Universitas Negeri Makassar (UNM)**.
-
-Sistem ini telah **terdaftar secara resmi sebagai Program Komputer** di **Direktorat Jenderal Kekayaan Intelektual (DJKI), Kementerian Hukum dan HAM Republik Indonesia**.
-
-Segala bentuk reproduksi, distribusi, modifikasi, atau penggunaan komersial atas kode sumber ini tanpa izin tertulis dari pemilik hak cipta adalah **dilarang keras** dan dapat dikenakan sanksi hukum sesuai ketentuan yang berlaku.
+Hak Cipta resmi dipegang oleh **Universitas Negeri Makassar**. Lisensi penggunaan penuh mengacu pada berkas [`LICENSE`](./LICENSE).
 
 ---
 
 <p align="center">
-    Dikembangkan oleh Muhammad Ikram Muslimin.
+  Dikembangkan oleh Muhammad Ikram Muslimin.
   <br>
   <em>© 2024–2026 TamuQ System. All Rights Reserved.</em>
 </p>
