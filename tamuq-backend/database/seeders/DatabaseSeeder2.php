@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
 
-class DatabaseSeeder extends Seeder
+class DatabaseSeeder2 extends Seeder
 {
     public function run(): void
     {
@@ -52,7 +52,8 @@ class DatabaseSeeder extends Seeder
                 'judul' => 'Belajar Laravel 10',
                 'penulis' => 'Taylor Otwell',
                 'kategori' => 'Teknologi',
-                'tempat' => 'Jakarta', 
+                'foto_buku' => null,
+                'tempat' => 'Jakarta',
                 'tahun_buku' => 2023,
                 'jumlah_tersedia' => 10,
                 'created_at'   => Carbon::now(),
@@ -63,7 +64,8 @@ class DatabaseSeeder extends Seeder
                 'judul' => 'Vue.js untuk Pemula',
                 'penulis' => 'Evan You',
                 'kategori' => 'Teknologi',
-                'tempat' => 'Bandung', 
+                'foto_buku' => null,
+                'tempat' => 'Bandung',
                 'tahun_buku' => 2022,
                 'jumlah_tersedia' => 5,
                 'created_at'   => Carbon::now(),

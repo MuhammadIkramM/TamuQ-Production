@@ -69,11 +69,12 @@
           <thead>
             <tr class="bg-[#00555A] text-white text-xs uppercase tracking-wider font-semibold">
               <th class="px-6 py-4 rounded-tl-lg">Mahasiswa</th>
-              <th class="px-6 py-4">Jenis & File User</th>
+              <th class="px-6 py-4">Jenis Surat</th>
               <th class="px-6 py-4">Detail Pengajuan</th>
               <th class="px-6 py-4">Waktu Pengajuan</th>
               <th class="px-6 py-4 text-center">Status</th>
-              <th class="px-6 py-4 text-center rounded-tr-lg">Tindakan</th>
+              <th class="px-6 py-4 text-center">Tindakan</th>
+              <th class="px-6 py-4 text-center rounded-tr-lg">Keterangan</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-50">
@@ -112,11 +113,11 @@
                   
                   <button 
                     v-if="pengajuan.file_pendukung"
-                    @click="downloadFileUser(pengajuan.file_pendukung)"
-                    class="text-xs flex items-center gap-1 text-[#F26430] hover:text-[#d14f1f] hover:underline cursor-pointer"
+                    @click="openFileUserPreview(pengajuan)"
+                    class="inline-flex items-center gap-1 px-2 py-1 bg-[#F26430]/10 text-[#F26430] hover:bg-[#F26430]/20 border border-[#F26430]/20 rounded-lg text-xs font-medium transition cursor-pointer"
                   >
-                    <PaperClipIcon class="w-3 h-3" />
-                    Lihat Bukti User
+                    <EyeIcon class="w-3 h-3" />
+                    Preview
                   </button>
                   <span v-else class="text-xs text-gray-400 italic">Tidak ada file</span>
                 </div>
@@ -179,7 +180,7 @@
                     Setujui
                   </button>
                   <button
-                    @click="openConfirmModal(pengajuan)"
+                    @click="openRejectModal(pengajuan)"
                     class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 border border-red-200 rounded-lg text-xs font-medium transition shadow-sm hover:shadow-md"
                     title="Tolak Pengajuan"
                   >
@@ -188,9 +189,11 @@
                   </button>
                 </div>
                 
-                <span v-else-if="pengajuan.status === 'Ditolak'" class="text-xs text-red-700 font-medium bg-red-50 px-3 py-1.5 rounded-lg border border-red-100 inline-flex items-center gap-1">
-                  <XMarkIcon class="w-3.5 h-3.5" /> Ditolak
-                </span>
+                <div v-else-if="pengajuan.status === 'Ditolak'" class="flex items-center justify-center gap-2">
+                  <span class="text-xs text-red-700 font-medium bg-red-50 px-3 py-1.5 rounded-lg border border-red-100 inline-flex items-center gap-1">
+                    <XMarkIcon class="w-3.5 h-3.5" /> Ditolak
+                  </span>
+                </div>
 
                 <div v-else class="flex flex-col items-center gap-2">
                   <span class="text-xs text-[#00555A] font-medium bg-[#00555A]/10 px-3 py-1.5 rounded-lg border border-[#00555A]/20 inline-flex items-center gap-1">
@@ -206,10 +209,23 @@
                   </div>
                 </div>
               </td>
+
+              <td class="px-6 py-4 text-center">
+                <div class="flex items-center justify-center gap-2">
+                  <span class="text-sm text-gray-600">{{ pengajuan.pesan || '-' }}</span>
+                  <button
+                    @click="openEditPesanModal(pengajuan)"
+                    class="p-1.5 bg-amber-50 text-amber-600 hover:bg-amber-100 rounded-lg border border-amber-200 transition"
+                    title="Edit Keterangan"
+                  >
+                    <PencilSquareIcon class="w-4 h-4" />
+                  </button>
+                </div>
+              </td>
             </tr>
 
             <tr v-if="filteredData.length === 0 && !isLoading">
-              <td colspan="6" class="px-6 py-12 text-center text-gray-400">
+              <td colspan="7" class="px-6 py-12 text-center text-gray-400">
                 <div class="flex flex-col items-center justify-center">
                   <InboxIcon class="w-12 h-12 text-gray-300 mb-3" />
                   <p class="text-base font-medium text-gray-500">Tidak ada data pengajuan sesuai filter.</p>
@@ -278,6 +294,18 @@
                  <XMarkIcon class="w-5 h-5" />
                </button>
             </div>
+
+            <div class="mt-4">
+              <label class="block text-sm font-medium text-gray-700 mb-2">Keterangan</label>
+              <textarea
+                v-model="uploadPesan"
+                :disabled="isSubmitting"
+                rows="3"
+                class="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00555A] focus:border-[#00555A] outline-none transition resize-none disabled:opacity-50 disabled:bg-gray-50"
+                placeholder="Tulis keterangan untuk pemohon..."
+              ></textarea>
+              <p class="text-xs text-gray-400 mt-1">Keterangan ini akan ditampilkan kepada pemohon.</p>
+            </div>
           </div>
 
           <div class="px-6 py-4 bg-gray-50 flex justify-end gap-3 border-t border-gray-100">
@@ -339,17 +367,30 @@
 
     <transition name="fade">
       <div v-if="confirmModal.show" class="fixed inset-0 flex items-center justify-center z-[60] bg-[#00282a]/50 backdrop-blur-sm p-4" @click.self="closeConfirmModal">
-        <div class="bg-white shadow-2xl rounded-2xl w-full max-w-sm overflow-hidden transform transition-all scale-100">
-          <div class="p-6 text-center">
-            <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <ExclamationTriangleIcon class="w-8 h-8 text-red-600" />
+        <div class="bg-white shadow-2xl rounded-2xl w-full max-w-md overflow-hidden transform transition-all scale-100">
+          <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+            <div>
+              <h3 class="text-lg font-bold text-red-600 flex items-center gap-2">
+                <ExclamationTriangleIcon class="w-5 h-5" />
+                Tolak Pengajuan
+              </h3>
+              <p class="text-xs text-gray-500">Untuk: {{ confirmModal.pengajuan?.nama_lengkap }}</p>
             </div>
-            <h3 class="text-lg font-bold text-gray-900 mb-2">Konfirmasi Penolakan</h3>
-            <p class="text-sm text-gray-500">
-              Apakah Anda yakin ingin menolak pengajuan dari <span class="font-semibold text-gray-800">{{ confirmModal.pengajuan?.nama_lengkap }}</span>? Aksi ini tidak dapat dibatalkan.
-            </p>
+            <button @click="closeConfirmModal" class="text-gray-400 hover:text-gray-600 transition">
+              <XMarkIcon class="w-6 h-6" />
+            </button>
           </div>
-          <div class="px-6 py-4 bg-gray-50 flex gap-3">
+          <div class="p-6 overflow-y-auto max-h-[70vh]">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Keterangan Penolakan</label>
+            <textarea
+              v-model="rejectPesan"
+              rows="4"
+              class="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-red-400 focus:border-red-400 outline-none transition resize-none"
+              placeholder="Tulis alasan penolakan..."
+            ></textarea>
+            <p class="text-xs text-gray-400 mt-1">Keterangan ini akan ditampilkan kepada pemohon.</p>
+          </div>
+          <div class="px-6 py-4 bg-gray-50 flex gap-3 border-t border-gray-100">
             <button @click="closeConfirmModal" :disabled="isRejecting" class="flex-1 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition">
               Batal
             </button>
@@ -357,6 +398,89 @@
               <ArrowPathIcon v-if="isRejecting" class="w-4 h-4 animate-spin" />
               <XMarkIcon v-else class="w-4 h-4" />
               {{ isRejecting ? 'Memproses...' : 'Ya, Tolak' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </transition>
+
+    <transition name="fade">
+      <div v-if="editPesanModal.show" class="fixed inset-0 flex items-center justify-center z-[60] bg-[#00282a]/50 backdrop-blur-sm p-4" @click.self="closeEditPesanModal">
+        <div class="bg-white shadow-2xl rounded-2xl w-full max-w-md overflow-hidden transform transition-all scale-100">
+          <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+            <div>
+              <h3 class="text-lg font-bold text-[#00555A] flex items-center gap-2">
+                <PencilSquareIcon class="w-5 h-5" />
+                Edit Keterangan
+              </h3>
+              <p class="text-xs text-gray-500">Untuk: {{ editPesanModal.pengajuan?.nama_lengkap }}</p>
+            </div>
+            <button @click="closeEditPesanModal" class="text-gray-400 hover:text-gray-600 transition">
+              <XMarkIcon class="w-6 h-6" />
+            </button>
+          </div>
+          <div class="p-6 overflow-y-auto max-h-[70vh]">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Keterangan / Pesan</label>
+            <textarea
+              v-model="editPesanModal.pesan"
+              rows="4"
+              class="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00555A] focus:border-[#00555A] outline-none transition resize-none"
+              placeholder="Tulis keterangan..."
+            ></textarea>
+          </div>
+          <div class="px-6 py-4 bg-gray-50 flex gap-3 border-t border-gray-100">
+            <button @click="closeEditPesanModal" :disabled="isUpdatingPesan" class="flex-1 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition">
+              Batal
+            </button>
+            <button @click="submitEditPesan" :disabled="isUpdatingPesan" class="flex-1 px-4 py-2 bg-[#00555A] hover:bg-[#004448] text-white rounded-lg text-sm font-medium transition shadow-md flex items-center justify-center gap-2 disabled:opacity-50">
+              <ArrowPathIcon v-if="isUpdatingPesan" class="w-4 h-4 animate-spin" />
+              <CheckBadgeIcon v-else class="w-4 h-4" />
+              {{ isUpdatingPesan ? 'Menyimpan...' : 'Simpan' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </transition>
+
+    <transition name="fade">
+      <div v-if="fileUserPreview.show" class="fixed inset-0 flex items-center justify-center z-[80] bg-[#00282a]/70 backdrop-blur-sm p-4" @click.self="closeFileUserPreview">
+        <div class="bg-white shadow-2xl rounded-2xl w-full max-w-4xl h-[85vh] flex flex-col overflow-hidden transform transition-all scale-100">
+          <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 shrink-0">
+            <div>
+              <h3 class="text-lg font-bold text-[#00555A]">Preview Bukti User</h3>
+            </div>
+            <button @click="closeFileUserPreview" class="text-gray-400 hover:text-gray-600 transition bg-white rounded-full p-1 border">
+              <XMarkIcon class="w-6 h-6" />
+            </button>
+          </div>
+          <div class="flex-1 bg-gray-100 relative overflow-hidden flex items-center justify-center p-4">
+            <div v-if="fileUserPreview.isLoading" class="flex flex-col items-center gap-3 text-gray-400">
+              <ArrowPathIcon class="w-10 h-10 animate-spin text-[#00555A]" />
+              <p class="text-sm">Memuat file...</p>
+            </div>
+            <template v-else>
+              <iframe 
+                v-if="fileUserPreview.type === 'pdf'" 
+                :src="fileUserPreview.url" 
+                class="w-full h-full rounded shadow-sm border border-gray-200"
+              ></iframe>
+              <img 
+                v-else-if="fileUserPreview.url"
+                :src="fileUserPreview.url" 
+                class="max-w-full max-h-full object-contain rounded shadow-sm" 
+                alt="Preview Bukti User" 
+              />
+            </template>
+          </div>
+          <div class="px-6 py-3 bg-gray-50 border-t border-gray-100 flex justify-end shrink-0">
+            <button
+              @click="downloadFromPreview"
+              :disabled="isDownloadingPreview"
+              class="inline-flex items-center gap-2 px-4 py-2 bg-[#00555A] hover:bg-[#004448] text-white rounded-lg text-sm font-medium transition shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <svg v-if="isDownloadingPreview" class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+              <CloudArrowUpIcon v-else class="w-4 h-4 rotate-180" />
+              {{ isDownloadingPreview ? 'Mengunduh...' : 'Unduh File' }}
             </button>
           </div>
         </div>
@@ -400,6 +524,7 @@ import {
 const pengajuanList = ref([]);
 const isLoading = ref(false);
 const isSubmitting = ref(false);
+const isDownloadingPreview = ref(false);
 
 const selectedJenis = ref("");
 const selectedRange = ref("all");
@@ -428,13 +553,17 @@ const formatDate = (dateStr) => {
 };
 
 const downloadFileUser = async (filePath) => {
+  if (isDownloadingPreview.value) return;
+  isDownloadingPreview.value = true;
+  
   if(!filePath) {
       showAlert('error', 'File Hilang', 'File tidak ditemukan di server.');
+      isDownloadingPreview.value = false;
       return;
   }
   try {
     const fileName = filePath.split('/').pop();
-    const response = await api.get(`/download-pendukung/${fileName}`, { responseType: 'blob' });
+    const response = await api.get(`/download-pendukung/${fileName}`, { responseType: 'blob', actionType: 'download' });
     const blob = new Blob([response.data], { type: response.headers['content-type'] });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -455,6 +584,8 @@ const downloadFileUser = async (filePath) => {
   } catch (error) {
     console.error("Gagal mendownload:", error);
     showAlert('error', 'Akses Ditolak', 'Gagal mengunduh file.');
+  } finally {
+    isDownloadingPreview.value = false;
   }
 };
 
@@ -489,8 +620,10 @@ const getStatusDot = (status) => {
 
 const confirmModal = ref({ show: false, pengajuan: null });
 const isRejecting = ref(false);
+const rejectPesan = ref('Surat ditolak');
 
-const openConfirmModal = (pengajuan) => {
+const openRejectModal = (pengajuan) => {
+  rejectPesan.value = 'Surat ditolak';
   confirmModal.value = { show: true, pengajuan: pengajuan };
 };
 
@@ -508,6 +641,7 @@ const proceedReject = async () => {
   try {
     const formData = new FormData();
     formData.append('status', 'Ditolak');
+    formData.append('pesan', rejectPesan.value);
 
     await api.post(`/pengajuan/${pengajuan.id}/verify`, formData);
     
@@ -516,6 +650,7 @@ const proceedReject = async () => {
     const index = pengajuanList.value.findIndex(p => p.id === pengajuan.id);
     if(index !== -1) {
         pengajuanList.value[index].status = 'Ditolak';
+        pengajuanList.value[index].pesan = rejectPesan.value;
     }
 
   } catch (error) {
@@ -525,6 +660,113 @@ const proceedReject = async () => {
     isRejecting.value = false;
     closeConfirmModal();
   }
+};
+
+const editPesanModal = ref({ show: false, pengajuan: null, pesan: '' });
+const isUpdatingPesan = ref(false);
+
+const openEditPesanModal = (pengajuan) => {
+  editPesanModal.value = { show: true, pengajuan: pengajuan, pesan: pengajuan.pesan || '' };
+};
+
+const closeEditPesanModal = () => {
+  if (isUpdatingPesan.value) return;
+  editPesanModal.value = { show: false, pengajuan: null, pesan: '' };
+};
+
+const submitEditPesan = async () => {
+  const pengajuan = editPesanModal.value.pengajuan;
+  if (!pengajuan) return;
+
+  isUpdatingPesan.value = true;
+
+  try {
+    await api.patch(`/pengajuan/${pengajuan.id}/update-pesan`, {
+      pesan: editPesanModal.value.pesan
+    });
+
+    showAlert('success', 'Berhasil', 'Keterangan berhasil diperbarui.');
+
+    const index = pengajuanList.value.findIndex(p => p.id === pengajuan.id);
+    if (index !== -1) {
+      pengajuanList.value[index].pesan = editPesanModal.value.pesan;
+    }
+
+  } catch (error) {
+    console.error(error);
+    showAlert('error', 'Gagal', error.response?.data?.message || 'Gagal memperbarui keterangan.');
+  } finally {
+    isUpdatingPesan.value = false;
+    closeEditPesanModal();
+  }
+};
+
+const fileUserPreview = ref({ show: false, url: '', type: '', isLoading: false, filePath: '' });
+
+const openFileUserPreview = async (pengajuan) => {
+  if (!pengajuan.file_pendukung) {
+    showAlert('error', 'File Hilang', 'File tidak ditemukan.');
+    return;
+  }
+
+  fileUserPreview.value = { show: true, url: '', type: '', isLoading: true, filePath: pengajuan.file_pendukung };
+
+  try {
+    const fileName = pengajuan.file_pendukung.split('/').pop();
+    const response = await api.get(`/preview-pendukung/${fileName}`, { responseType: 'blob', actionType: 'preview' });
+    const contentType = response.headers['content-type'] || '';
+
+    if (contentType.includes('application/json')) {
+      let msg = 'Dokumen tidak dapat dimuat dari server.';
+      try {
+        const text = await response.data.text();
+        const json = JSON.parse(text);
+        if (json.message) msg = json.message;
+      } catch (e) {}
+      fileUserPreview.value.show = false;
+      showAlert('error', 'Gagal Memuat', msg);
+      return;
+    }
+
+    const ext = fileName.split('.').pop().toLowerCase();
+    const isPdf = contentType.includes('pdf') || ext === 'pdf';
+
+    const blob = new Blob([response.data], { type: isPdf ? 'application/pdf' : contentType });
+    const blobUrl = URL.createObjectURL(blob);
+
+    fileUserPreview.value = {
+      show: true,
+      url: blobUrl,
+      type: isPdf ? 'pdf' : 'image',
+      isLoading: false,
+      filePath: pengajuan.file_pendukung
+    };
+  } catch (error) {
+    fileUserPreview.value.show = false;
+    let msg = 'File tidak dapat dimuat dari server.';
+    if (error.response?.data instanceof Blob && (error.response.data.type || '').includes('application/json')) {
+      try {
+        const text = await error.response.data.text();
+        const json = JSON.parse(text);
+        if (json.message) msg = json.message;
+      } catch (e) {}
+    } else if (error.response?.data?.message) {
+      msg = error.response.data.message;
+    }
+    showAlert('error', 'Gagal Memuat', msg);
+  }
+};
+
+const closeFileUserPreview = () => {
+  if (fileUserPreview.value.url?.startsWith('blob:')) {
+    URL.revokeObjectURL(fileUserPreview.value.url);
+  }
+  fileUserPreview.value.show = false;
+  setTimeout(() => { fileUserPreview.value.url = ''; }, 300);
+};
+
+const downloadFromPreview = () => {
+  downloadFileUser(fileUserPreview.value.filePath);
 };
 
 const previewModal = ref({ show: false, url: '', type: '', isLoading: false });
@@ -540,26 +782,52 @@ const openPreviewDocument = async (pengajuan) => {
     try {
         const fileName = pengajuan.file_balasan.split('/').pop();
         
-        const response = await api.get(`/download-balasan/${fileName}`, {
-            responseType: 'blob'
+        const response = await api.get(`/preview-balasan/${fileName}`, {
+            responseType: 'blob',
+            actionType: 'preview',
         });
+        const contentType = response.headers['content-type'] || '';
+
+        if (contentType.includes('application/json')) {
+            let msg = 'Dokumen tidak dapat dimuat dari server.';
+            try {
+                const text = await response.data.text();
+                const json = JSON.parse(text);
+                if (json.message) msg = json.message;
+            } catch (e) {}
+            previewModal.value.show = false;
+            showAlert('error', 'Gagal Memuat', msg);
+            return;
+        }
+
+        const ext = fileName.split('.').pop().toLowerCase();
+        const isPdf = contentType.includes('pdf') || ext === 'pdf';
 
         const blob = new Blob([response.data], {
-            type: response.headers['content-type']
+            type: isPdf ? 'application/pdf' : contentType
         });
         const blobUrl = URL.createObjectURL(blob);
-        const ext = fileName.split('.').pop().toLowerCase();
 
         previewModal.value = {
             show: true,
             url: blobUrl,
-            type: ext === 'pdf' ? 'pdf' : 'image',
+            type: isPdf ? 'pdf' : 'image',
             isLoading: false
         };
 
     } catch (error) {
         previewModal.value.show = false;
-        showAlert('error', 'Gagal Memuat', 'Dokumen tidak dapat dimuat dari server.');
+        let msg = 'Dokumen tidak dapat dimuat dari server.';
+        if (error.response?.data instanceof Blob && (error.response.data.type || '').includes('application/json')) {
+            try {
+                const text = await error.response.data.text();
+                const json = JSON.parse(text);
+                if (json.message) msg = json.message;
+            } catch (e) {}
+        } else if (error.response?.data?.message) {
+            msg = error.response.data.message;
+        }
+        showAlert('error', 'Gagal Memuat', msg);
     }
 };
 
@@ -577,16 +845,19 @@ const fileInput = ref(null);
 
 const isEditingMode = ref(false);
 const previewUrl = ref(null);
+const uploadPesan = ref('');
 
 const openUpload = (pengajuan) => {
   isEditingMode.value = false;
   selectedPengajuan.value = pengajuan;
+  uploadPesan.value = 'Surat diterima, silahkan unduh surat';
   resetUploadState();
 };
 
 const openEditUpload = (pengajuan) => {
   isEditingMode.value = true;
   selectedPengajuan.value = pengajuan;
+  uploadPesan.value = pengajuan.pesan || '';
   resetUploadState();
 };
 
@@ -627,22 +898,22 @@ const resetUploadState = () => {
 };
 
 const confirmUpload = async () => {
-  if (!selectedPengajuan.value || !uploadFile.value) return;
+  if (!selectedPengajuan.value || !uploadFile.value || isSubmitting.value) return;
 
   const currentPengajuan = selectedPengajuan.value;
   const currentFile = uploadFile.value;
 
-  selectedPengajuan.value = null; 
   isSubmitting.value = true;
-  
+
   try {
     const formData = new FormData();
     formData.append('file_balasan', currentFile);
-    
+    formData.append('pesan', uploadPesan.value);
+
     if (!isEditingMode.value) {
-        formData.append('status', 'Diterima'); 
+        formData.append('status', 'Diterima');
     }
-    
+
     const apiEndpoint = isEditingMode.value 
         ? `/pengajuan/${currentPengajuan.id}/update-balasan` 
         : `/pengajuan/${currentPengajuan.id}/verify`;
@@ -656,13 +927,13 @@ const confirmUpload = async () => {
         : 'Surat balasan terkirim.';
 
     showAlert('success', 'Berhasil', pesanSukses);
-    
-    fetchData(); 
+
+    selectedPengajuan.value = null;
     resetUploadState();
+    fetchData(); 
 
   } catch (error) {
     showAlert('error', 'Gagal', error.response?.data?.message || 'Terjadi kesalahan saat mengupload dokumen.');
-    selectedPengajuan.value = currentPengajuan;
   } finally {
     isSubmitting.value = false;
   }

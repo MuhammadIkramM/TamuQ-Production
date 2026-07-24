@@ -14,8 +14,8 @@
 [![Laravel API](https://img.shields.io/badge/Backend-Laravel_API-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)](https://laravel.com/)
 [![Pinia](https://img.shields.io/badge/State-Pinia-F7D336?style=for-the-badge&logo=pinia&logoColor=black)](https://pinia.vuejs.org/)
 [![WebAssembly](https://img.shields.io/badge/QR_Decode-WebAssembly-6543C4?style=for-the-badge&logo=webassembly&logoColor=white)](https://webassembly.org/)
-[![HKI Registered](https://img.shields.io/badge/HKI-Terdaftar_DJKI-00555A?style=for-the-badge&logo=gov.uk&logoColor=white)](#-hak-cipta--hki)
-[![License](https://img.shields.io/badge/License-Academic_Use-F26430?style=for-the-badge)](LICENSE)
+[![HKI Registered](https://img.shields.io/badge/HKI-Terdaftar_DJKI-00555A?style=for-the-badge&logo=gov.uk&logoColor=white)](#️-hak-cipta)
+[![License](https://img.shields.io/badge/License-Academic_Use-F26430?style=for-the-badge)](./LICENSE)
 
 <br/>
 
@@ -23,7 +23,7 @@
 
 <br/>
 
-[🚀 Mulai Sekarang](#-quick-start--instalasi) · [✨ Fitur Lengkap](#-fitur-unggulan) · [🏗 Arsitektur](#️-arsitektur-teknologi-tech-stack) · [🎥 Demo](#-demo-visual)
+[🚀 Mulai Sekarang](#-quick-start--instalasi) · [✨ Fitur Lengkap](#-fitur-unggulan) · [🏗 Arsitektur](#️-arsitektur-teknologi-tech-stack) · [⚖️ Hak Cipta & Lisensi](#️-hak-cipta)
 
 </div>
 
@@ -41,7 +41,7 @@
 
 <br/><br/>
 
-Atau putar langsung di browser menggunakan tag HTML berikut:
+Or play directly in browser:
 
 ```html
 <video controls width="100%" style="border-radius:12px;">
@@ -66,14 +66,15 @@ Atau putar langsung di browser menggunakan tag HTML berikut:
 |---|---|
 | Buku tamu fisik yang mudah rusak dan susah diaudit | Check-in digital via QR Code, tercatat otomatis |
 | Tidak ada data kunjungan real-time untuk analisis | Dashboard analitik dengan grafik tren kunjungan |
-| Proses peminjaman buku manual dan lambat | Manajemen sirkulasi buku digital & real-time |
+| Proses peminjaman buku manual dan lambat | Manajemen sirkulasi buku digital, fast scan & real-time |
+| Repositori karya ilmiah/skripsi belum terintegrasi | Modul E-Skripsi Digital & document streaming PDF inline |
 | Pengajuan surat bebas pustaka berbasis kertas | Pengajuan & validasi surat 100% paperless online |
 | Tidak ada visibilitas data demografi pengunjung | Visualisasi demografis per program studi (PTIK & TEKOM) |
 | Akses monitoring hanya saat petugas hadir | Kendali status operasional perpustakaan dari mana saja |
 
 <br/>
 
-> **TamuQ bukan sekadar aplikasi pencatat tamu** — ini adalah ekosistem manajemen perpustakaan modern yang menghubungkan mahasiswa, staf, dan data secara mulus dalam satu platform terintegrasi.
+> **TamuQ bukan sekadar aplikasi pencatat tamu** — ini adalah ekosistem manajemen perpustakaan modern yang menghubungkan mahasiswa, staf, repositori skripsi digital, dan data secara mulus dalam satu platform terintegrasi.
 
 ---
 
@@ -83,15 +84,16 @@ Atau putar langsung di browser menggunakan tag HTML berikut:
 
 Setiap mahasiswa yang terdaftar mendapatkan akses ke panel user yang personal dan intuitif:
 
-| Fitur | Deskripsi |
-|---|---|
-| 📊 **Dashboard Interaktif** | Ringkasan status kunjungan, informasi perpustakaan, dan akses cepat ke semua layanan |
-| 🔲 **QR Code Generator** | Generate QR Code unik milik sendiri untuk proses check-in kilat tanpa antri |
-| 📚 **Layanan Buku** | Lihat katalog koleksi buku, cek ketersediaan, dan riwayat peminjaman secara real-time |
-| 🕒 **Riwayat Kunjungan** | Rekam jejak lengkap semua kunjungan ke perpustakaan beserta timestamp akurat |
-| 📦 **Pengajuan Donasi Buku** | Formulir pengajuan donasi buku digital lengkap dengan tracking status persetujuan |
-| 📄 **Surat Bebas Pustaka Online** | Ajukan surat keterangan bebas pustaka secara digital — tanpa perlu datang ke loket! |
-| ⚙️ **Pengaturan Profil** | Kelola data pribadi, foto profil, dan preferensi akun secara mandiri |
+| Fitur | Deskripsi | Komponen Utama |
+|---|---|---|
+| 📊 **Dashboard Interaktif** | Ringkasan status kunjungan, informasi perpustakaan, dan akses cepat layanan | `DashboardUser.vue` |
+| 🔲 **QR Code Generator** | Generate QR Code unik milik sendiri untuk proses check-in kilat tanpa antri | `QRCodeUser.vue` |
+| 📚 **Layanan Buku** | Lihat katalog koleksi buku, filter kategori, dan cek riwayat peminjaman | `LayananBukuUser.vue` |
+| 🎓 **E-Skripsi Digital** | Pengajuan skripsi digital (upload PDF skripsi + lembar pengesahan), katalog publik, & streaming PDF inline | `ESkripsiUser.vue` |
+| 🕒 **Riwayat Kunjungan** | Rekam jejak lengkap semua kunjungan ke perpustakaan beserta timestamp akurat | `RiwayatKunjunganUser.vue` |
+| 📦 **Pengajuan Donasi Buku** | Formulir pengajuan donasi buku digital lengkap dengan tracking status | `PengajuanDonasiBukuUser.vue` |
+| 📄 **Surat Bebas Pustaka Online** | Ajukan surat keterangan bebas pustaka secara digital beserta preview balasan | `PengajuanSuratBebasUser.vue` |
+| ⚙️ **Pengaturan Profil** | Kelola data pribadi, foto profil, dan preferensi akun secara mandiri | `PengaturanUser.vue` |
 
 <br/>
 
@@ -99,21 +101,20 @@ Setiap mahasiswa yang terdaftar mendapatkan akses ke panel user yang personal da
 
 Panel staff dirancang untuk efisiensi operasional dan insight berbasis data:
 
-| Fitur | Deskripsi |
-|---|---|
-| 📈 **Dashboard Analitik** | Overview real-time: total koleksi, pengunjung hari ini, peminjaman aktif + status operasional perpustakaan |
-| 📉 **Grafik Tren Kunjungan** | Line chart interaktif via `LineChart.vue` dengan filter Hari Ini / Minggu Ini / Bulan Ini / Tanggal Kustom |
-| 🏫 **Demografis Prodi** | Bar chart `BarGraph.vue` visualisasi distribusi pengunjung berdasarkan program studi (PTIK & TEKOM) |
-| 📡 **Scan QR Code Pengunjung** | Scan QR Code mahasiswa langsung dari browser menggunakan **WebAssembly** (`zxing_reader.wasm`) — tanpa aplikasi tambahan! |
-| 📖 **Manajemen Inventaris Buku** | CRUD lengkap koleksi buku: tambah, edit, hapus, dan kelola status peminjaman |
-| 📋 **Validasi Surat Bebas Pustaka** | Review, setujui, atau tolak pengajuan surat dari mahasiswa dengan alur approval yang jelas |
-| 👤 **Manajemen Akun** | Kelola seluruh akun pengguna — khusus untuk role `admin` dan `superadmin` |
-| 🔐 **Kendali Status Perpustakaan** | Buka/tutup akses masuk perpustakaan secara real-time langsung dari dashboard |
-| ⚙️ **Pengaturan Staff** | Konfigurasi profil dan preferensi akun petugas |
+| Fitur | Deskripsi | Komponen Utama |
+|---|---|---|
+| 📈 **Dashboard Analitik** | Overview real-time: total koleksi, pengunjung hari ini, peminjaman aktif & kontrol status perpustakaan | `DashboardStaff.vue` |
+| 📉 **Grafik Tren Kunjungan** | Line chart interaktif via `LineChart.vue` dengan filter Hari Ini / Minggu Ini / Bulan Ini / Tanggal Kustom | `LineChart.vue` |
+| 🏫 **Demografis Prodi** | Bar chart `BarGraph.vue` visualisasi distribusi pengunjung berdasarkan program studi | `BarGraph.vue` |
+| 📡 **Scan QR Code Pengunjung** | Scan QR Code mahasiswa langsung dari browser menggunakan **WebAssembly** (`zxing_reader.wasm`) | `ScanQR.vue` |
+| 📖 **Manajemen Inventaris Buku** | CRUD lengkap koleksi buku, kategori dinamis, dan pencatatan transaksi peminjaman (support fast QR scan user) | `ManajemenBuku.vue` |
+| 📜 **Manajemen & Verifikasi Skripsi** | Review pengajuan skripsi mahasiswa, verifikasi status (disetujui/ditolak), edit data, & modal detail skripsi | `ManajemenSkripsi.vue` |
+| 📋 **Validasi Surat Bebas Pustaka** | Review pengajuan surat, upload surat balasan, edit pesan/balasan verifikasi, & preview dokumen inline | `PengajuanSurat.vue` |
+| 👤 **Manajemen Akun** | Kelola seluruh akun pengguna — khusus untuk role `admin` dan `superadmin` | `ManajemenAkun.vue` |
+| 🔐 **Kendali Status Perpustakaan** | Buka/tutup akses masuk perpustakaan secara real-time langsung dari dashboard | `DashboardStaff.vue` |
+| ⚙️ **Pengaturan Staff** | Konfigurasi profil dan preferensi akun petugas | `PengaturanStaff.vue` |
 
 <br/>
-
-> 💡 **Sistem akses berbasis peran** (Role-Based Access Control) memastikan setiap pengguna hanya bisa mengakses fitur sesuai otoritasnya. Percobaan akses tidak sah akan ditolak dengan notifikasi elegan.
 
 ---
 
@@ -125,12 +126,12 @@ Panel staff dirancang untuk efisiensi operasional dan insight berbasis data:
        ├── [ Login (/login) ] ──────────────────────────────────┐
        │                                                         │
        └── [ Register (/register) ]                             │
-                                                                 ▼
-                                                    ┌────────────────────────┐
-                                                    │   Auth Guard (Pinia)   │
-                                                    │   useAuthStore         │
-                                                    └─────────┬──────────────┘
-                                                              │
+                                                                  ▼
+                                                     ┌────────────────────────┐
+                                                     │   Auth Guard (Pinia)   │
+                                                     │   useAuthStore         │
+                                                     └─────────┬──────────────┘
+                                                               │
                        ┌──────────────────────────────────────┴──────────────────────────────────┐
                        │                                                                          │
               Role: pengunjung                                                          Role: staff/admin/superadmin
@@ -143,6 +144,7 @@ Panel staff dirancang untuk efisiensi operasional dan insight berbasis data:
          │  • qr                   │                                              │  • scan-qr (staff only)          │
          │  • riwayat              │                                              │  • riwayat-pengunjung            │
          │  • layanan-buku         │                                              │  • manajemen-buku                │
+         │  • e-skripsi            │                                              │  • manajemen-skripsi             │
          │  • surat-bebas          │                                              │  • pengajuan-surat               │
          │  • donasi               │                                              │  • manajemen-akun (admin only)   │
          │  • pengaturan           │                                              │  • pengaturan                    │
@@ -172,15 +174,6 @@ Panel staff dirancang untuk efisiensi operasional dan insight berbasis data:
 
 </div>
 
-<br/>
-
-### 🔮 Keunggulan Teknis yang Menonjol
-
-- **⚡ WebAssembly QR Decoder** — Scan QR Code menggunakan `public/wasm/zxing_reader.wasm`, memungkinkan decoding di sisi browser dengan performa mendekati native tanpa dependensi server.
-- **🛡️ Role-Based Navigation Guard** — `router/index.js` mengimplementasikan guard yang mengecek role secara asinkron via `useAuthStore().initializeAuth()` sebelum setiap navigasi, mencegah akses tidak sah.
-- **💾 Safe Auth Persistence** — `stores/auth.js` hanya menyimpan field aman (`id_user`, `role`, `nama_lengkap`, `foto_profil`) ke `localStorage`, bukan keseluruhan objek user.
-- **📊 Adaptive Analytics Chart** — Line chart pada dashboard staff mampu mendeteksi kunjungan di luar jam kerja (di luar 08:00–17:00) secara otomatis dan menandainya dengan warna merah.
-
 ---
 
 ## 🚀 Quick Start — Instalasi
@@ -188,69 +181,24 @@ Panel staff dirancang untuk efisiensi operasional dan insight berbasis data:
 ### Prasyarat
 
 Pastikan sistem Anda sudah terpasang:
-- **Node.js** `>= 18.x` — [Download Node.js](https://nodejs.org/)
-- **npm** `>= 9.x` (termasuk dalam paket Node.js)
-- **Git** — [Download Git](https://git-scm.com/)
+- **Node.js** `>= 18.x`
+- **npm** `>= 9.x`
+- **Git**
 - Backend **TamuQ API** (Laravel) yang sudah berjalan
 
-<br/>
-
-### Langkah Instalasi
-
-**1. Clone repositori**
-
 ```bash
+# 1. Clone repositori
 git clone https://github.com/MuhammadIkramM/TamuQ-Production.git
 cd TamuQ-Production/tamuq-frontend
-```
 
-**2. Instal dependensi**
-
-```bash
+# 2. Instal dependensi
 npm install
-```
 
-**3. Konfigurasi environment**
-
-Buat file `.env.development` untuk kebutuhan lokal (atau sesuaikan `.env.production` yang sudah tersedia):
-
-```bash
-# .env.development
-VITE_API_BASE_URL=http://localhost:8000
-VITE_STORAGE_URL=http://localhost:8000/storage
-```
-
-```bash
-# .env.production (sudah dikonfigurasi)
-VITE_API_BASE_URL=https://tamuq.my.id
-VITE_STORAGE_URL=https://tamuq.my.id/storage
-```
-
-> **Catatan:** Variabel `VITE_API_BASE_URL` mengarah ke base URL backend TamuQ (Laravel). Pastikan backend sudah berjalan dan CORS dikonfigurasi untuk menerima request dari origin frontend Anda.
-
-**4. Jalankan mode development**
-
-```bash
+# 3. Jalankan mode development
 npm run dev
 ```
 
-Aplikasi akan berjalan di `http://localhost:5173` secara default.
-
-**5. Build untuk production**
-
-```bash
-npm run build
-```
-
-Hasil build akan tersimpan di direktori `dist/` dan siap dideploy ke web server.
-
-**6. Preview build production secara lokal**
-
-```bash
-npm run preview
-```
-
-<br/>
+---
 
 ### Struktur Direktori Utama
 
@@ -259,31 +207,24 @@ tamuq-frontend/
 ├── public/
 │   ├── tamuqicon.png          # Favicon & logo utama aplikasi
 │   ├── og-image.png           # Open Graph image untuk SEO/sosmed
-│   ├── robots.txt             # Konfigurasi SEO crawler
-│   ├── sitemap.xml            # Sitemap untuk mesin pencari
 │   └── wasm/
 │       └── zxing_reader.wasm  # WebAssembly module untuk QR Code decoding
 ├── src/
-│   ├── assets/
-│   │   ├── tamuqicon.png      # Logo dalam src (digunakan komponen Vue)
-│   │   ├── unmlogo.png        # Logo UNM untuk footer
-│   │   ├── thumbnailvid.png   # Thumbnail preview video demo
-│   │   ├── web_demo.mp4       # Video demo lengkap aplikasi
-│   │   ├── pic1-4.jpeg        # Foto slideshow hero section
-│   │   └── orang1-5.png       # Foto testimoni landing page
 │   ├── components/
+│   │   ├── DetailSkripsiModal.vue  # Modal detail skripsi (preview PDF, abstrak & meta)
+│   │   ├── GlobalProgressBar.vue   # Top progress bar global untuk async request
 │   │   └── charts/
-│   │       ├── BarGraph.vue   # Komponen bar chart (demografis prodi)
-│   │       └── LineChart.vue  # Komponen line chart (tren kunjungan)
+│   │       ├── BarGraph.vue        # Komponen bar chart (demografis prodi)
+│   │       └── LineChart.vue       # Komponen line chart (tren kunjungan)
 │   ├── layouts/
-│   │   ├── SideBarStaff.vue   # Layout sidebar untuk panel staff
-│   │   └── BarUser.vue        # Layout navbar untuk panel user
+│   │   ├── SideBarStaff.vue        # Layout sidebar untuk panel staff
+│   │   └── BarUser.vue             # Layout navbar untuk panel user
 │   ├── router/
-│   │   └── index.js           # Konfigurasi routing & navigation guard
+│   │   └── index.js                # Konfigurasi routing & navigation guard
 │   ├── stores/
-│   │   └── auth.js            # Pinia store: auth, session, role management
+│   │   └── auth.js                 # Pinia store: auth, session, role management
 │   ├── views/
-│   │   ├── LandingPage.vue    # Halaman utama / beranda publik
+│   │   ├── LandingPage.vue         # Halaman utama / beranda publik
 │   │   ├── Auth/
 │   │   │   ├── LoginView.vue
 │   │   │   └── RegisterView.vue
@@ -291,7 +232,8 @@ tamuq-frontend/
 │   │   │   ├── DashboardStaff.vue    # Dashboard analitik staff
 │   │   │   ├── ScanQR.vue            # Scanner QR Code via kamera
 │   │   │   ├── RiwayatPengunjung.vue # Histori kunjungan seluruh user
-│   │   │   ├── ManajemenBuku.vue     # CRUD inventaris buku
+│   │   │   ├── ManajemenBuku.vue     # CRUD inventaris & peminjaman buku
+│   │   │   ├── ManajemenSkripsi.vue  # Verifikasi & kelola repositori skripsi
 │   │   │   ├── PengajuanSurat.vue    # Validasi surat bebas pustaka
 │   │   │   ├── ManajemenAkun.vue     # Manajemen akun (admin only)
 │   │   │   └── PengaturanStaff.vue   # Pengaturan profil staff
@@ -300,83 +242,75 @@ tamuq-frontend/
 │   │       ├── QRCodeUser.vue        # Tampil & generate QR Code
 │   │       ├── RiwayatKunjunganUser.vue  # Riwayat kunjungan pribadi
 │   │       ├── LayananBukuUser.vue   # Katalog & layanan buku
-│   │       ├── PengajuanSuratBebasUser.vue # Pengajuan surat
+│   │       ├── ESkripsiUser.vue      # Katalog E-Skripsi & pengajuan mahasiswa
+│   │       ├── PengajuanSuratBebasUser.vue # Pengajuan surat bebas pustaka
 │   │       ├── PengajuanDonasiBukuUser.vue # Pengajuan donasi buku
 │   │       └── PengaturanUser.vue    # Pengaturan profil user
-│   ├── api.js                 # Instance Axios dengan base URL & interceptor
-│   ├── main.js                # Entry point aplikasi Vue
-│   └── style.css              # Global CSS & Tailwind base imports
-├── .env.production            # Konfigurasi environment production
-├── vite.config.js             # Konfigurasi build Vite
-├── tailwind.config.js         # Konfigurasi Tailwind CSS
-└── package.json               # Dependensi & scripts npm
+│   ├── api.js                      # Instance Axios dengan base URL & interceptor
+│   ├── main.js                     # Entry point aplikasi Vue
+│   └── style.css                   # Global CSS & Tailwind base imports
+├── LICENSE                         # ← Lisensi & HKI Frontend
+└── package.json                    # Dependensi & scripts npm
 ```
-
----
-
-## 🎨 Panduan Branding & Desain
-
-TamuQ menggunakan sistem desain yang konsisten dan berciri khas:
-
-| Elemen | Nilai |
-|---|---|
-| **Primary Color** | `#00555A` — Teal gelap (warna JTIK UNM) |
-| **Accent Color** | `#F26430` — Oranye cerah (CTA & highlight) |
-| **Background** | `#EBF2FA` — Biru muda lembut |
-| **Font Family** | Inter / Sans-serif |
-| **Border Radius** | `rounded-2xl` hingga `rounded-3xl` (modern & friendly) |
-| **Animasi** | Transisi halus 300ms, ping indicator, slide hero carousel |
 
 ---
 
 ## 🤝 Kontribusi
 
-Proyek ini dikembangkan dalam konteks penelitian skripsi di lingkungan JTIK UNM dan saat ini **tidak membuka kontribusi eksternal secara umum**. Jika Anda adalah civitas akademika JTIK UNM atau memiliki kepentingan resmi, silakan hubungi pengembang melalui kontak yang tersedia.
-
-Untuk laporan bug atau saran fitur dalam lingkup internal, silakan buka *Issue* pada repositori ini.
+Proyek ini dikembangkan oleh **Muhammad Ikram Muslimin** dalam rangka penyusunan skripsi di lingkungan **Jurusan Teknik Informatika dan Komputer (JTIK), Universitas Negeri Makassar (UNM)** dan saat ini **tidak membuka kontribusi eksternal secara umum**. Jika Anda adalah civitas akademika JTIK UNM atau memiliki kepentingan resmi, silakan hubungi pengembang melalui repositori GitHub resmi.
 
 ---
 
-## 📜 Hak Cipta & HKI
+## ⚖️ Hak Cipta
 
 <div align="center">
 
 ```
-╔══════════════════════════════════════════════════════════════════╗
-║              HAK KEKAYAAN INTELEKTUAL — TERDAFTAR               ║
-╠══════════════════════════════════════════════════════════════════╣
-║  Nama Program  : TamuQ - Smart Library Guestbook &              ║
-║                  Management System                               ║
-║  Kategori      : Program Komputer                               ║
-║  Instansi      : Jurusan Teknik Informatika dan Komputer (JTIK) ║
-║                  Universitas Negeri Makassar (UNM)              ║
-║  Lembaga HKI   : DJKI — Direktorat Jenderal Kekayaan           ║
-║                  Intelektual, Kemenkumham RI                    ║
-║  Status        : ✅ Terdaftar & Dilindungi Undang-Undang        ║
+╔══════════════════════════════════════════════════════════════════════╗
+║             HAK KEKAYAAN INTELEKTUAL (HKI) — TERDAFTAR               ║
+╠══════════════════════════════════════════════════════════════════════╣
+║  Nama Program  : TamuQ - Smart Library Guestbook &                  ║
+║                  Management System                                   ║
+║  Jenis Ciptaan : Program Komputer                                    ║
+║  Institusi     : Jurusan Teknik Informatika dan Komputer (JTIK)     ║
+║                  Universitas Negeri Makassar (UNM)                  ║
+║  Lembaga HKI   : DJKI — Direktorat Jenderal Kekayaan Intelektual   ║
+║                  Kementerian Hukum dan HAM Republik Indonesia        ║
+║  Status        : ✅ Terdaftar Resmi & Dilindungi Undang-Undang      ║
 ╚══════════════════════════════════════════════════════════════════╝
 ```
 
-**© 2024 TamuQ — Dikembangkan oleh Muhammad Ikram Muslimin.**
+</div>
 
-Sistem ini merupakan karya intelektual yang telah terdaftar secara resmi sebagai **Program Komputer** di Direktorat Jenderal Kekayaan Intelektual (DJKI), Kementerian Hukum dan HAM Republik Indonesia.
+Seluruh kode sumber, desain antarmuka, alur sistem, dan aset visual yang terdapat dalam repositori ini dilindungi oleh **Undang-Undang Republik Indonesia Nomor 28 Tahun 2014 tentang Hak Cipta** dan terdaftar secara resmi di Direktorat Jenderal Kekayaan Intelektual (DJKI), Kementerian Hukum dan HAM Republik Indonesia melalui **2 (dua) Surat Pencatatan Ciptaan**:
 
-Seluruh kode sumber, desain antarmuka, alur sistem, dan aset visual yang terdapat dalam repositori ini **dilindungi hak cipta**. Reproduksi, distribusi, atau modifikasi tanpa izin tertulis dari pemilik hak cipta merupakan pelanggaran hukum.
+| Sertifikat 1 | Sertifikat 2 |
+|---|---|
+| **Judul Ciptaan:**<br/>TamuQ: Sistem Buku Tamu Digital dan Manajemen Layanan Perpustakaan JTIK UNM | **Judul Ciptaan:**<br/>Logic System Website TamuQ: Buku Tamu Perpustakaan JTIK UNM |
+| **Jenis Ciptaan:** Program Komputer | **Jenis Ciptaan:** Program Komputer |
+| **Nomor Pencatatan:** `001348850` | **Nomor Pencatatan:** `001348857` |
+| **Permohonan:** EC002026114925 (15 Juli 2026) | **Permohonan:** EC002026114926 (15 Juli 2026) |
+| **Pencipta (Sesuai Urutan Resmi):**<br/>1. Prof. Dr. H. Ruslan, M.Pd.<br/>2. Muhammad Ikram Muslimin<br/>3. Ayu Tri Wardani S.Pd., M.Pd. | **Pencipta (Sesuai Urutan Resmi):**<br/>1. Ayu Tri Wardani S.Pd., M.Pd.<br/>2. Muhammad Ikram Muslimin<br/>3. Prof. Dr. H. Ruslan, M.Pd. |
+| **Pemegang Hak Cipta:**<br/>Universitas Negeri Makassar | **Pemegang Hak Cipta:**<br/>Universitas Negeri Makassar |
+| **Pengumuman Pertama:**<br/>15 Juli 2026, di Kota Makassar | **Pengumuman Pertama:**<br/>15 Juli 2026, di Kota Makassar |
 
-<br/>
+---
+
+## 👨‍💻 Pengembang
+
+Antarmuka pengguna (frontend) TamuQ **dibangun dan dikembangkan oleh [Muhammad Ikram Muslimin](https://github.com/MuhammadIkramM)** sebagai pengembang utama (lead developer) dalam rangka penelitian skripsi di JTIK UNM. Muhammad Ikram Muslimin tercatat secara resmi sebagai salah satu **Pencipta** dalam kedua Surat Pencatatan Ciptaan di atas, dengan Pemegang Hak Cipta resmi **Universitas Negeri Makassar**. Detail lisensi dapat dibaca pada berkas [`LICENSE`](./LICENSE).
+
+---
+
+<div align="center">
 
 [![Universitas Negeri Makassar](https://img.shields.io/badge/Universitas-Negeri_Makassar-00555A?style=flat-square)](https://unm.ac.id/)
 [![JTIK UNM](https://img.shields.io/badge/Jurusan-JTIK_UNM-F26430?style=flat-square)](https://ft.unm.ac.id/)
 [![DJKI Kemenkumham](https://img.shields.io/badge/HKI-DJKI_Kemenkumham_RI-003087?style=flat-square)](https://dgip.go.id/)
 
-</div>
-
----
-
-<div align="center">
+<br/>
 
 **Scan. Track. Manage.**
-
-<br/>
 
 *TamuQ — Karena setiap kunjungan ke perpustakaan itu berharga.*
 

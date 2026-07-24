@@ -11,8 +11,10 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import api from '@/api';
 import RegisterForm from "@/components/Auth/RegisterForm.vue";
+import { useAuthStore } from '@/stores/auth';
 
 const router = useRouter();
+const auth = useAuthStore();
 const isLoading = ref(false);
 const errorMessage = ref('');
 
@@ -25,8 +27,13 @@ const handleRegister = async (formData) => {
     const response = await api.post('/register', formData);
 
     if (response.data.success) {
+      const userData = response.data.data.user ? response.data.data.user : response.data.data;
+      auth.setUser(userData);
+
       alert('Registrasi Berhasil! Anda akan diarahkan ke Dashboard.');
       router.push('/user/dashboard');
+    } else {
+      errorMessage.value = response.data.message || 'Registrasi gagal. Silakan coba lagi.';
     }
 
   } catch (error) {

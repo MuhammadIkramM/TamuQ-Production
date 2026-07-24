@@ -1,5 +1,6 @@
 <template>
   <div class="relative min-h-screen">
+    <GlobalProgressBar />
     <router-view />
 
     <Transition name="modal-fade">
@@ -53,6 +54,7 @@ import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import api from '@/api';
 import { useAuthStore } from '@/stores/auth';
+import GlobalProgressBar from '@/components/GlobalProgressBar.vue';
 
 const router = useRouter();
 const route = useRoute();

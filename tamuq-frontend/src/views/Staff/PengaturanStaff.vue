@@ -90,13 +90,17 @@
               <div class="relative">
                 <input 
                   type="email" 
-                  v-model="formProfile.email" 
-                  class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#F26430] focus:border-[#F26430] text-sm text-[#00555A] outline-none transition-all duration-200"
+                  v-model="formProfile.email"
+                  autocomplete="off"
+                  class="w-full pl-10 pr-4 py-2.5 bg-white border rounded-xl focus:ring-2 text-sm text-[#00555A] outline-none transition-all duration-200"
+                  :class="emailError ? 'border-red-400 focus:ring-red-300 focus:border-red-400' : 'border-gray-200 focus:ring-[#F26430] focus:border-[#F26430]'"
                   placeholder="Masukkan alamat email aktif"
+                  @input="emailError = ''"
                 />
                 <EnvelopeIcon class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
               </div>
-              <p class="text-xs text-gray-400">Digunakan untuk notifikasi surat atau reset password.</p>
+              <p v-if="emailError" class="text-xs text-red-500 font-medium">{{ emailError }}</p>
+              <p v-else class="text-xs text-gray-400">Digunakan untuk notifikasi surat atau reset password.</p>
             </div>
           </div>
         </div>
@@ -176,6 +180,8 @@ const isLoading = ref(false);
 const isLoadingPass = ref(false);
 const previewUrl = ref(null); 
 const selectedFile = ref(null); 
+const emailError = ref('');
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const formProfile = reactive({
   nama: "",
@@ -249,13 +255,18 @@ const handleFotoSelect = (event) => {
 };
 
 const saveChanges = async () => {
+  const trimmedEmail = (formProfile.email || '').trim();
+  if (trimmedEmail && !EMAIL_REGEX.test(trimmedEmail)) {
+    emailError.value = 'Masukkan email yang valid';
+    return;
+  }
+  emailError.value = '';
+
   isLoading.value = true;
   const formData = new FormData();
 
   formData.append('nama_lengkap', formProfile.nama);
-  if(formProfile.email !== null) {
-      formData.append('email', formProfile.email); 
-  }
+  formData.append('email', trimmedEmail);
   
   if (selectedFile.value) {
       formData.append('foto', selectedFile.value); 
@@ -271,7 +282,7 @@ const saveChanges = async () => {
     const user = response.data.user || response.data; 
     
     if (user.nama_lengkap) formProfile.nama = user.nama_lengkap;
-    if (user.email !== undefined) formProfile.email = user.email;
+    if (user.email !== undefined) formProfile.email = user.email || '';
     if (user.foto_profil) formProfile.avatarUrl = getFullImageUrl(user.foto_profil);
     
     selectedFile.value = null;
@@ -281,7 +292,12 @@ const saveChanges = async () => {
 
   } catch (error) {
     console.error(error);
-    const msg = error.response?.data?.message || "Cek koneksi atau format file.";
+    let msg = 'Cek koneksi atau format file.';
+    if (error.response?.status === 422 && error.response.data?.errors) {
+      msg = Object.values(error.response.data.errors).flat()[0];
+    } else {
+      msg = error.response?.data?.message || msg;
+    }
     showAlert('error', 'Gagal Menyimpan', msg);
   } finally {
     isLoading.value = false;

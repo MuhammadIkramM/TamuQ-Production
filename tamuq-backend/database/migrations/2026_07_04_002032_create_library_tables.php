@@ -11,10 +11,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
-            $table->integer('id_user')->autoIncrement(); 
+            $table->integer('id_user')->autoIncrement();
             $table->string('nama_lengkap', 100);
-            $table->string('nomor_induk', 50)->unique();
-            $table->string('email')->unique()->nullable(); 
+            $table->string('nomor_induk', 30)->unique(); 
+            $table->string('email')->unique()->nullable();
             $table->enum('prodi', ['PTIK', 'TEKOM']);
             $table->enum('role', ['pengunjung', 'staff', 'superadmin']);
             $table->string('password_hash', 255);
@@ -63,9 +63,10 @@ return new class extends Migration
             $table->string('kode_buku', 50)->nullable()->unique();
             $table->string('judul', 255);
             $table->string('penulis', 255)->nullable();
-            $table->string('kategori', 100)->nullable();
-            $table->string('tempat', 100)->nullable(); 
-            $table->integer('tahun_buku')->nullable(); 
+            $table->string('kategori', 100)->nullable(); 
+            $table->string('foto_buku', 255)->nullable(); 
+            $table->string('tempat', 100)->nullable();
+            $table->integer('tahun_buku')->nullable();
             $table->integer('jumlah_tersedia')->nullable();
             $table->timestamps();
         });
@@ -75,9 +76,9 @@ return new class extends Migration
             $table->integer('id_user');
             $table->integer('id_buku');
             $table->string('judul', 255)->nullable();
-            $table->string('no_hp', 20)->nullable(); 
+            $table->string('no_hp', 20)->nullable();
             $table->date('tanggal_pinjam')->nullable();
-            $table->date('tanggal_kembali')->nullable(); 
+            $table->date('tanggal_kembali')->nullable();
             $table->enum('status', ['dipinjam', 'selesai', 'kembali'])->nullable();
             $table->timestamps();
 
@@ -105,18 +106,38 @@ return new class extends Migration
             $table->enum('jenis', ['Bebas Perpustakaan', 'Donasi Buku']);
             $table->string('nama_lengkap');
             $table->string('nomor_induk');
-            $table->string('prodi')->nullable(); 
+            $table->string('prodi')->nullable();
             $table->string('status')->default('Menunggu Verifikasi');
+            $table->text('pesan')->nullable(); 
             $table->string('jabatan')->nullable();
             $table->text('alamat')->nullable();
             $table->string('no_hp')->nullable();
-            $table->string('judul_buku')->nullable(); 
+            $table->string('judul_buku')->nullable();
             $table->string('file_pendukung')->nullable();
             $table->string('file_balasan')->nullable();
-            $table->string('no_surat')->nullable(); 
+            $table->string('no_surat')->nullable();
             $table->timestamps();
 
             $table->foreign('user_id')->references('id_user')->on('users')->onDelete('cascade');
+        });
+
+        Schema::create('skripsi', function (Blueprint $table) {
+            $table->integer('id_skripsi')->autoIncrement();
+            $table->integer('user_id')->nullable();
+            $table->string('foto', 255)->nullable();
+            $table->string('judul', 255);
+            $table->text('abstrak')->nullable();
+            $table->string('nama', 100);
+            $table->string('nim', 30); 
+            $table->enum('prodi', ['PTIK', 'TEKOM']);
+            $table->integer('tahun_selesai');
+            $table->string('file_skripsi', 255);
+            $table->string('file_preview_skripsi', 255)->nullable();
+            $table->enum('status', ['menunggu', 'disetujui', 'ditolak'])->default('menunggu');
+            $table->text('keterangan')->nullable();
+            $table->timestamps();
+
+            $table->foreign('user_id')->references('id_user')->on('users')->onDelete('set null');
         });
 
         Schema::create('settings', function (Blueprint $table) {
@@ -146,6 +167,7 @@ return new class extends Migration
         Schema::dropIfExists('cache');
         Schema::dropIfExists('sessions');
         Schema::dropIfExists('settings');
+        Schema::dropIfExists('skripsi');
         Schema::dropIfExists('pengajuan_surats');
         Schema::dropIfExists('riwayat_pengembalian');
         Schema::dropIfExists('peminjaman');

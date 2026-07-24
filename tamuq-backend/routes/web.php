@@ -10,4 +10,4 @@ Route::middleware([\App\Http\Middleware\SecurityHeaders::class])
         }
         return response(file_get_contents($path))
             ->header('Content-Type', 'text/html; charset=utf-8');
-    })->where('any', '^(?!assets|logojtik\.png).*$');
+    })->where('any', '^(?!api/|sanctum/|assets|logojtik\.png).*$');

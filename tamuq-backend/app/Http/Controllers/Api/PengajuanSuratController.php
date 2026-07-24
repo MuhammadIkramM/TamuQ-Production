@@ -38,7 +38,7 @@ class PengajuanSuratController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'jenis'          => 'required|in:Bebas Perpustakaan,Donasi Buku',
-            'file_pendukung' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120', 
+            'file_pendukung' => 'required|file|mimes:pdf,jpg,jpeg,png|mimetypes:application/pdf,image/jpeg,image/png|max:8192', 
             'no_hp'          => 'nullable|string|max:20', 
             'alamat'         => 'nullable|string|max:500',
             'jabatan'        => 'nullable|string|max:100',
@@ -140,7 +140,8 @@ class PengajuanSuratController extends Controller
 
         $validator = Validator::make($request->all(), [
             'status'       => 'required|in:Diterima,Ditolak,Selesai', 
-            'file_balasan' => 'required_if:status,Diterima|nullable|file|mimes:pdf,jpg,png|max:5120'
+            'file_balasan' => 'required_if:status,Diterima|nullable|file|mimes:pdf,jpg,png|mimetypes:application/pdf,image/jpeg,image/png|max:8192',
+            'pesan'        => 'required_if:status,Ditolak|nullable|string|max:1000'
         ]);
 
         if ($validator->fails()) {
@@ -164,6 +165,7 @@ class PengajuanSuratController extends Controller
                 $pengajuan->file_balasan = $path;
             }
 
+            $pengajuan->pesan = $request->pesan;
             $pengajuan->save();
 
             return response()->json([
@@ -177,6 +179,84 @@ class PengajuanSuratController extends Controller
         }
     }
 
+    public function updatePesan(Request $request, $id)
+    {
+        if (strtolower($request->user()->role) === 'pengunjung') {
+            return response()->json(['message' => 'Unauthorized. Akses ditolak.'], 403);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'pesan' => 'nullable|string|max:1000'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['message' => $validator->errors()->first()], 422);
+        }
+
+        $pengajuan = PengajuanSurat::find($id);
+        if (!$pengajuan) {
+            return response()->json(['message' => 'Data tidak ditemukan'], 404);
+        }
+
+        try {
+            $pengajuan->pesan = $request->pesan;
+            $pengajuan->save();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Keterangan berhasil diperbarui.',
+                'data' => $pengajuan
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Gagal memperbarui keterangan: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function updateBalasan(Request $request, $id)
+    {
+        if (strtolower($request->user()->role) === 'pengunjung') {
+            return response()->json(['message' => 'Unauthorized. Akses ditolak.'], 403);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'file_balasan' => 'nullable|file|mimes:pdf,jpg,png|mimetypes:application/pdf,image/jpeg,image/png|max:8192',
+            'pesan'        => 'nullable|string|max:1000'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['message' => $validator->errors()->first()], 422);
+        }
+
+        $pengajuan = PengajuanSurat::find($id);
+        if (!$pengajuan) {
+            return response()->json(['message' => 'Data tidak ditemukan'], 404);
+        }
+
+        try {
+            if ($request->hasFile('file_balasan')) {
+                if ($pengajuan->file_balasan && Storage::disk('local')->exists($pengajuan->file_balasan)) {
+                    Storage::disk('local')->delete($pengajuan->file_balasan);
+                }
+                $path = $request->file('file_balasan')->store('balasan_files', 'local');
+                $pengajuan->file_balasan = $path;
+            }
+
+            if ($request->has('pesan')) {
+                $pengajuan->pesan = $request->pesan;
+            }
+
+            $pengajuan->save();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Balasan dan keterangan berhasil diperbarui.',
+                'data' => $pengajuan
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Gagal memperbarui balasan: ' . $e->getMessage()], 500);
+        }
+    }
+
     public function downloadPendukung(Request $request, $filename)
     {
         if (!$request->user()) {
@@ -184,7 +264,10 @@ class PengajuanSuratController extends Controller
         }
 
         $user = $request->user();
-        $pengajuan = PengajuanSurat::where('file_pendukung', 'LIKE', '%' . $filename . '%')->first();
+        $escapedFilename = str_replace(['%', '_'], ['\%', '\_'], $filename);
+        $pengajuan = PengajuanSurat::where('file_pendukung', $filename)
+            ->orWhere('file_pendukung', 'LIKE', '%/' . $escapedFilename)
+            ->first();
 
         if (!$pengajuan) {
             return response()->json(['message' => 'Data pengajuan tidak ditemukan di database.'], 404);
@@ -211,7 +294,10 @@ class PengajuanSuratController extends Controller
         }
 
         $user = $request->user();
-        $pengajuan = PengajuanSurat::where('file_balasan', 'LIKE', '%' . $filename . '%')->first();
+        $escapedFilename = str_replace(['%', '_'], ['\%', '\_'], $filename);
+        $pengajuan = PengajuanSurat::where('file_balasan', $filename)
+            ->orWhere('file_balasan', 'LIKE', '%/' . $escapedFilename)
+            ->first();
 
         if (!$pengajuan) {
             return response()->json(['message' => 'Data pengajuan tidak ditemukan di database.'], 404);
@@ -229,5 +315,106 @@ class PengajuanSuratController extends Controller
         elseif (Storage::disk('public')->exists('balasan_files/' . $filename)) return Storage::disk('public')->download('balasan_files/' . $filename);
 
         return response()->json(['message' => 'File balasan fisik tidak ditemukan di server.'], 404);
+    }
+
+    public function previewPendukung(Request $request, $filename)
+    {
+        if (!$request->user()) {
+            return response()->json(['message' => 'Sesi habis atau Anda belum login.'], 401);
+        }
+
+        $user = $request->user();
+        $escapedFilename = str_replace(['%', '_'], ['\\%', '\\_'], $filename);
+        $pengajuan = PengajuanSurat::where('file_pendukung', $filename)
+            ->orWhere('file_pendukung', 'LIKE', '%/' . $escapedFilename)
+            ->first();
+
+        if (!$pengajuan) {
+            return response()->json(['message' => 'Data pengajuan tidak ditemukan di database.'], 404);
+        }
+
+        if (strtolower($user->role) === 'pengunjung' && $pengajuan->user_id != $user->id_user) {
+            return response()->json(['message' => 'Akses Ditolak! Anda tidak berhak melihat file ini.'], 403);
+        }
+
+        $dbPath = $pengajuan->file_pendukung;
+
+        // Cari file di berbagai lokasi disk (sama seperti downloadPendukung)
+        $resolvedPath = null;
+        $resolvedDisk = null;
+
+        if (Storage::disk('local')->exists($dbPath)) {
+            $resolvedPath = $dbPath;
+            $resolvedDisk = 'local';
+        } elseif (Storage::disk('public')->exists($dbPath)) {
+            $resolvedPath = $dbPath;
+            $resolvedDisk = 'public';
+        } elseif (Storage::disk('local')->exists('pengajuan_files/' . $filename)) {
+            $resolvedPath = 'pengajuan_files/' . $filename;
+            $resolvedDisk = 'local';
+        } elseif (Storage::disk('public')->exists('pengajuan_files/' . $filename)) {
+            $resolvedPath = 'pengajuan_files/' . $filename;
+            $resolvedDisk = 'public';
+        }
+
+        if (!$resolvedPath) {
+            return response()->json(['message' => 'File fisik tidak ditemukan di server.'], 404);
+        }
+
+        $mimeType = Storage::disk($resolvedDisk)->mimeType($resolvedPath) ?: 'application/octet-stream';
+
+        return Storage::disk($resolvedDisk)->response($resolvedPath, null, [
+            'Content-Type' => $mimeType,
+        ], 'inline');
+    }
+
+    public function previewBalasan(Request $request, $filename)
+    {
+        if (!$request->user()) {
+            return response()->json(['message' => 'Sesi habis atau Anda belum login.'], 401);
+        }
+
+        $user = $request->user();
+        $escapedFilename = str_replace(['%', '_'], ['\\%', '\\_'], $filename);
+        $pengajuan = PengajuanSurat::where('file_balasan', $filename)
+            ->orWhere('file_balasan', 'LIKE', '%/' . $escapedFilename)
+            ->first();
+
+        if (!$pengajuan) {
+            return response()->json(['message' => 'Data pengajuan tidak ditemukan di database.'], 404);
+        }
+
+        if (strtolower($user->role) === 'pengunjung' && $pengajuan->user_id != $user->id_user) {
+            return response()->json(['message' => 'Akses Ditolak! Anda tidak berhak melihat file ini.'], 403);
+        }
+
+        $dbPath = $pengajuan->file_balasan;
+
+        $resolvedPath = null;
+        $resolvedDisk = null;
+
+        if (Storage::disk('local')->exists($dbPath)) {
+            $resolvedPath = $dbPath;
+            $resolvedDisk = 'local';
+        } elseif (Storage::disk('public')->exists($dbPath)) {
+            $resolvedPath = $dbPath;
+            $resolvedDisk = 'public';
+        } elseif (Storage::disk('local')->exists('balasan_files/' . $filename)) {
+            $resolvedPath = 'balasan_files/' . $filename;
+            $resolvedDisk = 'local';
+        } elseif (Storage::disk('public')->exists('balasan_files/' . $filename)) {
+            $resolvedPath = 'balasan_files/' . $filename;
+            $resolvedDisk = 'public';
+        }
+
+        if (!$resolvedPath) {
+            return response()->json(['message' => 'File balasan fisik tidak ditemukan di server.'], 404);
+        }
+
+        $mimeType = Storage::disk($resolvedDisk)->mimeType($resolvedPath) ?: 'application/octet-stream';
+
+        return Storage::disk($resolvedDisk)->response($resolvedPath, null, [
+            'Content-Type' => $mimeType,
+        ], 'inline');
     }
 }

@@ -250,7 +250,7 @@ const barOptions = {
       },
       title: {
         display: true,
-        text: 'Jumlah Pengunjung',
+        text: 'Jumlah Akun',
         color: '#94a3b8',
         font: { size: 10, weight: 'bold' }
       }
@@ -427,7 +427,7 @@ const fetchAllData = async () => {
         prodiData.value = {
             labels: ["PTIK", "TEKOM"],
             datasets: [{
-                label: 'Jumlah Pengunjung',
+                label: 'Jumlah Akun',
                 data: data.demografi, 
                 backgroundColor: ["#00555A", "#F26430"], 
                 borderRadius: 8, 

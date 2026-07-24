@@ -50,8 +50,8 @@
             <thead class="sticky top-0 z-10 shadow-sm">
               <tr class="bg-[#66999C] text-xs uppercase tracking-wider text-white font-bold">
                 <th class="px-6 py-4 w-16 text-center">No</th>
-                <th class="px-6 py-4">Profil Pengguna</th>
-                <th class="px-6 py-4">Identitas</th>
+                <th class="px-6 py-4">Pengguna</th>
+                <th class="px-6 py-4">Nomor Induk</th>
                 <th class="px-6 py-4">Role</th>
                 <th class="px-6 py-4 text-center">Status</th>
                 <th class="px-6 py-4 text-center">Aksi</th>
@@ -115,14 +115,17 @@
                   <div class="flex flex-col items-center justify-center gap-1.5">
                     <button 
                       @click="toggleUserStatus(user)"
-                      class="relative inline-flex h-6 w-12 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#00555A] focus:ring-offset-1 shadow-inner"
+                      :disabled="togglingUserId !== null"
+                      class="relative inline-flex h-6 w-12 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#00555A] focus:ring-offset-1 shadow-inner disabled:opacity-50 disabled:cursor-not-allowed"
                       :class="user.status === 'Aktif' ? 'bg-green-500' : 'bg-red-500'"
                       :title="user.status === 'Aktif' ? 'Klik untuk memblokir akun' : 'Klik untuk mengaktifkan akun'"
                     >
                       <span 
-                        class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-300 ease-in-out"
+                        class="pointer-events-none flex items-center justify-center h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-300 ease-in-out"
                         :class="user.status === 'Aktif' ? 'translate-x-6' : 'translate-x-0'"
-                      ></span>
+                      >
+                        <svg v-if="togglingUserId === user.id" class="animate-spin h-3 w-3 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                      </span>
                     </button>
                     <span class="text-[10px] font-bold tracking-wider uppercase" :class="user.status === 'Aktif' ? 'text-green-600' : 'text-red-600'">
                       {{ user.status }}
@@ -181,12 +184,12 @@
 
               <div class="space-y-1.5">
                 <label class="text-xs font-bold text-[#00555A]/70 uppercase tracking-wide">Nama Lengkap</label>
-                <input type="text" v-model="formData.nama_lengkap" class="w-full px-4 py-2.5 bg-[#EBF2FA]/30 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#F26430] focus:border-[#F26430] text-sm outline-none transition text-[#00555A]" placeholder="Contoh: Ahmad Fadli" />
+                <input type="text" v-model="formData.nama_lengkap" class="w-full px-4 py-2.5 bg-[#EBF2FA]/30 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#F26430] focus:border-[#F26430] text-sm outline-none transition text-[#00555A]" placeholder="Contoh: Muhammad Ikram Muslimin" />
               </div>
 
               <div class="space-y-1.5">
                 <label class="text-xs font-bold text-[#00555A]/70 uppercase tracking-wide">Email</label>
-                <input type="email" v-model="formData.email" class="w-full px-4 py-2.5 bg-[#EBF2FA]/30 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#F26430] focus:border-[#F26430] text-sm outline-none transition text-[#00555A]" placeholder="Contoh: ahmad@student.undiksha.ac.id" />
+                <input type="email" v-model="formData.email" class="w-full px-4 py-2.5 bg-[#EBF2FA]/30 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#F26430] focus:border-[#F26430] text-sm outline-none transition text-[#00555A]" placeholder="Contoh: ikram@unm.ac.id" />
               </div>
 
               <div class="grid grid-cols-2 gap-5">
@@ -270,8 +273,10 @@
               <button @click="closeDeleteModal" class="px-5 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-xl text-sm font-semibold hover:bg-gray-50 transition">
                 Batal
               </button>
-              <button @click="confirmDelete" class="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-semibold transition shadow-lg shadow-red-600/30">
-                Ya, Hapus
+              <button @click="confirmDelete" :disabled="isDeleting" class="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-semibold transition shadow-lg shadow-red-600/30 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                <svg v-if="isDeleting" class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                <span v-if="isDeleting">Menghapus...</span>
+                <span v-else>Ya, Hapus</span>
               </button>
             </div>
           </div>
@@ -316,6 +321,8 @@ const showModal = ref(false);
 const modalMode = ref("add");
 const isLoading = ref(false);
 const isSubmitting = ref(false);
+const isDeleting = ref(false);
+const togglingUserId = ref(null);
 const errorMsg = ref("");
 const showPassword = ref(false);
 
@@ -399,6 +406,9 @@ const fetchUsers = async () => {
 };
 
 const toggleUserStatus = async (user) => {
+  if (togglingUserId.value !== null) return;
+  togglingUserId.value = user.id;
+
   const originalStatus = user.status;
   const newStatus = originalStatus === 'Aktif' ? 'Blokir' : 'Aktif';
   
@@ -422,6 +432,8 @@ const toggleUserStatus = async (user) => {
     user.status = originalStatus;
     console.error("Toggle Status Error:", error);
     showAlert('error', 'Gagal', 'Tidak dapat mengubah status pengguna.');
+  } finally {
+    togglingUserId.value = null;
   }
 };
 
@@ -520,8 +532,9 @@ const closeDeleteModal = () => {
 };
 
 const confirmDelete = async () => {
+  if (isDeleting.value) return;
+  isDeleting.value = true;
   const id = deleteState.value.id;
-  closeDeleteModal(); 
 
   try {
     await api.delete(`/admin/users/${id}`);
@@ -530,6 +543,9 @@ const confirmDelete = async () => {
   } catch (error) {
     console.error("Delete Error:", error);
     showAlert('error', 'Gagal', 'Gagal menghapus pengguna: ' + (error.response?.data?.message || "Server Error"));
+  } finally {
+    isDeleting.value = false;
+    closeDeleteModal(); 
   }
 };
 

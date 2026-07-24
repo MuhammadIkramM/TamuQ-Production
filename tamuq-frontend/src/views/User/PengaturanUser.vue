@@ -97,13 +97,20 @@
               <div class="relative">
                 <input 
                   type="email" 
-                  v-model="formEmail" 
+                  v-model="formEmail"
+                  autocomplete="off"
+                  name="user_personal_email_field"
+                  readonly
+                  @focus="$event.target.removeAttribute('readonly')"
                   placeholder="Masukkan alamat email aktif Anda" 
-                  class="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00555A] outline-none transition-all font-medium text-sm text-gray-700" 
+                  class="w-full pl-10 pr-4 py-3 bg-white border rounded-xl focus:ring-2 outline-none transition-all font-medium text-sm text-gray-700" 
+                  :class="emailError ? 'border-red-400 focus:ring-red-300' : 'border-gray-200 focus:ring-[#00555A]'"
+                  @input="emailError = ''"
                 />
                 <EnvelopeIcon class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
               </div>
-              <p class="text-xs text-gray-400 mt-1">Digunakan untuk menerima notifikasi persetujuan surat dari staff perpustakaan.</p>
+              <p v-if="emailError" class="text-xs text-red-500 mt-1 font-medium">{{ emailError }}</p>
+              <p v-else class="text-xs text-gray-400 mt-1">Digunakan untuk menerima notifikasi persetujuan surat dari staff perpustakaan.</p>
             </div>
           </div>
 
@@ -231,6 +238,8 @@ import {
 
 const user = ref({});
 const formEmail = ref(""); 
+const emailError = ref("");
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const defaultAvatar = "https://ui-avatars.com/api/?name=User&background=00555A&color=fff";
 const isLoadingFoto = ref(false);
@@ -314,13 +323,18 @@ const handleFotoSelect = (event) => {
 };
 
 const updateEmail = async () => {
+    const trimmedEmail = formEmail.value.trim();
+    if (trimmedEmail && !EMAIL_REGEX.test(trimmedEmail)) {
+        emailError.value = 'Masukkan email yang valid';
+        return;
+    }
+    emailError.value = '';
+
     isLoadingEmail.value = true;
     const formData = new FormData();
     
     formData.append('nama_lengkap', user.value.nama_lengkap);
-    if(formEmail.value) {
-       formData.append('email', formEmail.value);
-    }
+    formData.append('email', trimmedEmail);
 
     try {
         const response = await api.post('/user/update-profile', formData, {
@@ -329,12 +343,18 @@ const updateEmail = async () => {
         
         if(response.data.user) {
             user.value.email = response.data.user.email;
+            formEmail.value = response.data.user.email || '';
         }
 
         openModal('success', 'Data Diperbarui', 'Alamat email Anda berhasil disimpan.', 'Mantap');
     } catch (error) {
         console.error("Gagal menyimpan email:", error);
-        const msg = error.response?.data?.message || "Gagal menyimpan perubahan. Silakan coba lagi.";
+        let msg = 'Gagal menyimpan perubahan. Silakan coba lagi.';
+        if (error.response?.status === 422 && error.response.data?.errors) {
+            msg = Object.values(error.response.data.errors).flat()[0];
+        } else {
+            msg = error.response?.data?.message || msg;
+        }
         openModal('error', 'Gagal', msg, 'Tutup');
     } finally {
         isLoadingEmail.value = false;

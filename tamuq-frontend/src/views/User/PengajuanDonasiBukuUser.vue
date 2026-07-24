@@ -144,8 +144,9 @@
             <div 
               v-for="(item, index) in statusList" 
               :key="item.id || index" 
-              class="bg-white border border-gray-100 rounded-2xl p-4 hover:shadow-md hover:border-[#F26430]/30 transition-all flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between group"
+              class="bg-white border border-gray-100 rounded-2xl p-4 hover:shadow-md hover:border-[#F26430]/30 transition-all group"
             >
+              <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
               <div class="flex items-center gap-4">
                 <div class="w-12 h-12 rounded-full bg-[#EBF2FA] flex items-center justify-center text-[#00555A] shrink-0 group-hover:bg-[#F26430] group-hover:text-white transition-colors duration-300">
                   <BookOpenIcon class="w-6 h-6" />
@@ -162,10 +163,13 @@
                   
                   <button 
                     v-if="item.file_pendukung" 
-                    @click="downloadFileSecure(item.file_pendukung, 'pendukung')" 
-                    class="text-xs text-[#00555A] underline mt-1 block hover:text-[#F26430] transition-colors cursor-pointer text-left"
+                    @click="previewFileSecure(item.file_pendukung, 'pendukung', item.id)" 
+                    :disabled="previewingKey !== null"
+                    class="inline-flex items-center gap-1 px-2 py-1 bg-[#F26430]/10 text-[#F26430] hover:bg-[#F26430]/20 border border-[#F26430]/20 rounded-lg text-xs font-medium transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed mt-1"
                   >
-                    Lihat Bukti Upload
+                    <svg v-if="previewingKey === `${item.id}-pendukung`" class="animate-spin h-3 w-3 text-[#F26430]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    <EyeIcon v-else class="w-3 h-3" />
+                    <span>{{ previewingKey === `${item.id}-pendukung` ? 'Memuat...' : 'Preview' }}</span>
                   </button>
                 </div>
               </div>
@@ -180,12 +184,14 @@
                 
                 <button 
                   v-if="['Diterima', 'Selesai'].includes(item.status) && item.file_balasan"
-                  @click="downloadFileSecure(item.file_balasan, 'balasan')"
-                  class="flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-[#00555A] bg-[#EBF2FA] hover:bg-[#00555A] hover:text-white rounded-lg transition-colors border border-[#00555A]/20 cursor-pointer"
-                  title="Unduh Tanda Terima"
+                  @click="downloadFileSecure(item.file_balasan, 'balasan', item.id)"
+                  :disabled="downloadingKey !== null"
+                  class="flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-[#00555A] bg-[#EBF2FA] hover:bg-[#00555A] hover:text-white rounded-lg transition-colors border border-[#00555A]/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed justify-center"
+                  title="Unduh Surat Balasan"
                 >
-                  <ArrowDownTrayIcon class="w-4 h-4" />
-                  <span class="hidden sm:inline">Tanda Terima</span>
+                  <svg v-if="downloadingKey === `${item.id}-balasan`" class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                  <ArrowDownTrayIcon v-else class="w-4 h-4" />
+                  <span>{{ downloadingKey === `${item.id}-balasan` ? 'Mengunduh...' : 'Unduh Surat' }}</span>
                 </button>
 
                 <div 
@@ -196,6 +202,19 @@
                   <XCircleIcon class="w-5 h-5" />
                 </div>
               </div>
+              </div>
+
+              <div 
+                v-if="['Ditolak', 'Diterima', 'Selesai'].includes(item.status) && item.pesan"
+                class="mt-3 pt-3 border-t flex items-start gap-2"
+                :class="item.status === 'Ditolak' ? 'border-red-100' : 'border-[#00555A]/10'"
+              >
+                <ExclamationTriangleIcon v-if="item.status === 'Ditolak'" class="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                <CheckCircleIcon v-else class="w-4 h-4 text-[#00555A] shrink-0 mt-0.5" />
+                <p class="text-xs leading-relaxed" :class="item.status === 'Ditolak' ? 'text-red-600' : 'text-[#00555A]'">
+                  <span class="font-bold">{{ item.status === 'Ditolak' ? 'Alasan Penolakan: ' : 'Keterangan: ' }}</span>{{ item.pesan }}
+                </p>
+              </div>
 
             </div>
           </div>
@@ -203,6 +222,35 @@
         </div>
       </div>
     </div>
+
+    <transition name="modal-fade">
+      <div v-if="previewModal.show" class="fixed inset-0 z-[60] flex items-center justify-center px-4">
+        <div class="absolute inset-0 bg-[#00282a]/60 backdrop-blur-sm transition-opacity" @click="closePreviewModal"></div>
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-4xl relative z-10 overflow-hidden flex flex-col h-[90vh] transform transition-all scale-100">
+          <div class="flex items-center justify-between p-5 border-b border-gray-100 bg-[#EBF2FA]/50">
+            <h3 class="font-bold text-[#00555A] text-lg">Bukti Upload</h3>
+            <div class="flex items-center gap-2">
+              <button 
+                @click="downloadFileSecure(previewModal.filePath, previewModal.tipe, previewModal.itemId)"
+                :disabled="downloadingKey !== null"
+                class="p-2 text-[#00555A] bg-[#EBF2FA] hover:bg-[#00555A] hover:text-white rounded-lg transition-colors border border-[#00555A]/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                title="Unduh"
+              >
+                <svg v-if="downloadingKey === `${previewModal.itemId}-${previewModal.tipe}`" class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                <ArrowDownTrayIcon v-else class="w-5 h-5" />
+              </button>
+              <button @click="closePreviewModal" class="p-2 text-red-500 bg-red-50 hover:bg-red-500 hover:text-white rounded-lg transition-colors border border-red-200" title="Tutup">
+                <XCircleIcon class="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+          <div class="flex-1 bg-gray-100 relative overflow-hidden flex items-center justify-center p-4">
+            <iframe v-if="previewModal.type === 'pdf'" :src="previewModal.url" class="w-full h-full rounded-lg shadow-sm"></iframe>
+            <img v-else :src="previewModal.url" class="max-w-full max-h-full object-contain rounded-lg shadow-sm" />
+          </div>
+        </div>
+      </div>
+    </transition>
 
     <transition name="modal-fade">
       <div v-if="modal.show" class="fixed inset-0 z-[60] flex items-center justify-center px-4">
@@ -254,7 +302,7 @@ import api from "../../api";
 import { 
   GiftIcon, BriefcaseIcon, MapPinIcon, PhoneIcon,
   PaperAirplaneIcon, ArchiveBoxIcon, BookOpenIcon, ClockIcon, 
-  ArrowDownTrayIcon, CloudArrowUpIcon, ArrowPathIcon,
+  ArrowDownTrayIcon, CloudArrowUpIcon, ArrowPathIcon, EyeIcon,
   CheckCircleIcon, XCircleIcon, ExclamationTriangleIcon, QuestionMarkCircleIcon
 } from "@heroicons/vue/24/outline";
 
@@ -270,7 +318,17 @@ const form = ref({
 const fileInputRef = ref(null);
 const isLoading = ref(false);
 const isLoadingFetch = ref(false);
-const statusList = ref([]); 
+const statusList = ref([]);
+const downloadingKey = ref(null);
+const previewingKey = ref(null);
+const previewModal = ref({
+  show: false,
+  url: '',
+  type: 'pdf',
+  filePath: '',
+  tipe: '',
+  itemId: null,
+}); 
 
 const modal = ref({
   show: false,
@@ -419,8 +477,78 @@ const processSubmit = async () => {
   }
 };
 
-const downloadFileSecure = async (filePath, tipe) => {
-  if (!filePath) return;
+const previewFileSecure = async (filePath, tipe, itemId) => {
+  if (previewingKey.value !== null || !filePath) return;
+  previewingKey.value = `${itemId}-${tipe}`;
+
+  try {
+    const fileName = filePath.split('/').pop();
+    const endpoint = tipe === 'pendukung' 
+      ? `/preview-pendukung/${fileName}` 
+      : `/preview-balasan/${fileName}`;
+
+    const response = await api.get(endpoint, { responseType: 'blob', actionType: 'preview' });
+    const contentType = response.headers['content-type'] || '';
+
+    if (contentType.includes('application/json')) {
+      let msg = 'Gagal memuat file dari server.';
+      try {
+        const text = await response.data.text();
+        const json = JSON.parse(text);
+        if (json.message) msg = json.message;
+      } catch (e) {}
+      openModal('error', 'Gagal Memuat File', msg, 'Tutup');
+      return;
+    }
+
+    const ext = fileName.split('.').pop().toLowerCase();
+    const isPdf = contentType.includes('pdf') || ext === 'pdf';
+
+    const blob = new Blob([response.data], { type: isPdf ? 'application/pdf' : contentType });
+    const url = window.URL.createObjectURL(blob);
+
+    previewModal.value = {
+      show: true,
+      url,
+      type: isPdf ? 'pdf' : 'image',
+      filePath,
+      tipe,
+      itemId,
+    };
+  } catch (error) {
+    console.error("Gagal memuat preview:", error);
+    let msg = 'File tidak ditemukan atau Anda tidak memiliki izin untuk melihatnya.';
+    if (error.response?.data instanceof Blob && (error.response.data.type || '').includes('application/json')) {
+      try {
+        const text = await error.response.data.text();
+        const json = JSON.parse(text);
+        if (json.message) msg = json.message;
+      } catch (e) {}
+    } else if (error.response?.data?.message) {
+      msg = error.response.data.message;
+    }
+    openModal('error', 'Gagal Memuat File', msg, 'Tutup');
+  } finally {
+    previewingKey.value = null;
+  }
+};
+
+const closePreviewModal = () => {
+  if (previewModal.value.url?.startsWith('blob:')) {
+    window.URL.revokeObjectURL(previewModal.value.url);
+  }
+  previewModal.value = { show: false, url: '', type: 'pdf', filePath: '', tipe: '', itemId: null };
+};
+
+const downloadFileSecure = async (filePath, tipe, itemId) => {
+  if (downloadingKey.value !== null) return;
+  downloadingKey.value = `${itemId}-${tipe}`;
+
+  if (!filePath) {
+    downloadingKey.value = null;
+    openModal('error', 'File Tidak Ditemukan', 'File tidak tersedia di server.', 'Tutup');
+    return;
+  }
   
   try {
     const fileName = filePath.split('/').pop();
@@ -431,6 +559,7 @@ const downloadFileSecure = async (filePath, tipe) => {
 
     const response = await api.get(endpoint, {
       responseType: 'blob', 
+      actionType: 'download',
     });
 
     const blob = new Blob([response.data], { type: response.headers['content-type'] });
@@ -456,6 +585,8 @@ const downloadFileSecure = async (filePath, tipe) => {
   } catch (error) {
     console.error("Gagal mendownload file:", error);
     openModal('error', 'Akses Ditolak', 'File tidak ditemukan atau Anda tidak memiliki izin untuk mengunduhnya.', 'Tutup');
+  } finally {
+    downloadingKey.value = null;
   }
 };
 

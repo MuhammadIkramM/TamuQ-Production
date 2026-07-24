@@ -29,7 +29,26 @@
       </div>
     </div>
 
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="flex items-center gap-2 border-b border-gray-200">
+      <button 
+        @click="activeMainTab = 'Katalog Buku & Stok'"
+        class="px-4 py-2.5 text-sm font-bold border-b-2 transition-colors flex items-center gap-2"
+        :class="activeMainTab === 'Katalog Buku & Stok' ? 'border-[#00555A] text-[#00555A]' : 'border-transparent text-gray-500 hover:text-gray-700'"
+      >
+        <Square3Stack3DIcon class="w-5 h-5" />
+        Katalog Buku & Stok
+      </button>
+      <button 
+        @click="activeMainTab = 'Sirkulasi & Riwayat'"
+        class="px-4 py-2.5 text-sm font-bold border-b-2 transition-colors flex items-center gap-2"
+        :class="activeMainTab === 'Sirkulasi & Riwayat' ? 'border-[#00555A] text-[#00555A]' : 'border-transparent text-gray-500 hover:text-gray-700'"
+      >
+        <ClockIcon class="w-5 h-5" />
+        Sirkulasi & Riwayat
+      </button>
+    </div>
+
+    <div v-show="activeMainTab === 'Katalog Buku & Stok'" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
       <div class="p-5 flex flex-col md:flex-row md:items-center justify-between bg-[#00555A] gap-4 rounded-t-2xl">
         <div class="flex items-center gap-3">
           <h3 class="text-lg font-bold text-white flex items-center gap-2">
@@ -70,7 +89,11 @@
         <table class="w-full text-left border-collapse whitespace-nowrap">
           <thead class="sticky top-0 z-10 shadow-sm">
             <tr class="bg-[#66999C] text-white text-xs uppercase tracking-wider font-semibold">
+              <th class="px-3 py-3 text-center w-14">
+                <QrCodeIcon class="w-4 h-4 text-white/70 mx-auto" />
+              </th>
               <th class="px-6 py-3">Kode Buku</th>
+              <th class="px-3 py-3 text-center w-16">Foto</th>
               <th class="px-6 py-3">Judul Buku</th>
               <th class="px-6 py-3">Kategori</th>
               <th class="px-6 py-3">Penulis</th>
@@ -82,7 +105,31 @@
           </thead>
           <tbody class="divide-y divide-gray-50">
             <tr v-for="buku in filteredKatalog" :key="buku.id_buku" class="hover:bg-gray-50 transition-colors">
+              <td class="px-3 py-3 text-center">
+                <div 
+                  v-if="buku.kode_buku" 
+                  class="inline-block cursor-pointer"
+                  @click="openQrPreview(buku.kode_buku)"
+                  title="Klik untuk pratinjau QR"
+                >
+                  <qrcode-vue 
+                    :value="buku.kode_buku" 
+                    :size="36" 
+                    level="H" 
+                    render-as="svg"
+                    foreground="#1f2937"
+                  />
+                </div>
+              </td>
               <td class="px-6 py-3 text-sm font-mono text-gray-600">{{ buku.kode_buku || '-' }}</td>
+              <td class="px-3 py-3 text-center">
+                  <img 
+                    v-if="buku.foto_buku" 
+                    :src="'https://tamuq.my.id/storage/' + buku.foto_buku" 
+                    alt="Foto Buku"
+                    class="w-10 h-14 object-cover rounded border border-gray-200 mx-auto"
+                  />
+              </td>
               <td class="px-6 py-3 text-sm font-medium text-gray-800">{{ buku.judul }}</td>
               <td class="px-6 py-3 text-sm text-gray-500">
                 <span v-if="buku.kategori" class="px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-600 border border-gray-200">
@@ -117,7 +164,7 @@
                 </td>
             </tr>
             <tr v-if="filteredKatalog.length === 0">
-              <td colspan="8" class="px-6 py-8 text-center text-gray-400 text-sm">
+              <td colspan="10" class="px-6 py-8 text-center text-gray-400 text-sm">
                 {{ searchKatalog ? 'Buku tidak ditemukan.' : 'Belum ada data buku.' }}
               </td>
             </tr>
@@ -126,7 +173,8 @@
       </div>
     </div>
 
-    <div class="flex flex-col sm:flex-row justify-between items-end sm:items-center mt-6 mb-2 gap-4">
+    <div v-show="activeMainTab === 'Sirkulasi & Riwayat'" class="space-y-6">
+      <div class="flex flex-col sm:flex-row justify-between items-end sm:items-center mt-6 mb-2 gap-4">
       <h2 class="text-lg font-bold text-[#00555A]">Sirkulasi & Riwayat</h2>
       <div class="relative w-full sm:w-80">
         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -141,7 +189,7 @@
       </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden h-fit">
         <div class="p-5 flex justify-between items-center bg-[#00555A] rounded-t-2xl">
           <h3 class="text-lg font-bold text-white flex items-center gap-2">
@@ -219,8 +267,9 @@
                 </td>
 
                 <td class="px-4 py-4 text-center align-middle">
-                  <button @click="kembalikanBuku(pinjam)" class="px-3 py-1.5 bg-[#00555A] hover:bg-[#004448] text-white rounded-lg text-xs font-medium transition shadow-sm hover:shadow-md">
-                    Kembalikan
+                  <button @click="kembalikanBuku(pinjam)" :disabled="returningBookId !== null" class="px-3 py-1.5 bg-[#00555A] hover:bg-[#004448] text-white rounded-lg text-xs font-medium transition shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5">
+                    <svg v-if="returningBookId === pinjam.id && isReturnRequestInFlight" class="animate-spin h-3.5 w-3.5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    <span>{{ returningBookId === pinjam.id && isReturnRequestInFlight ? 'Memproses...' : 'Kembalikan' }}</span>
                   </button>
                 </td>
               </tr>
@@ -275,6 +324,8 @@
         </div>
       </div>
     </div>
+    </div>
+
     <transition name="fade">
       <div v-if="showPinjamModal" class="fixed inset-0 flex items-center justify-center z-50 bg-[#00282a]/50 backdrop-blur-sm p-4" @click.self="cancelPinjam">
         <div class="bg-white shadow-2xl rounded-2xl w-full max-w-md overflow-visible transform transition-all scale-100">
@@ -282,7 +333,7 @@
              <h3 class="text-lg font-bold text-[#00555A]">Catat Peminjaman</h3>
              <button @click="cancelPinjam" class="text-gray-400 hover:text-gray-600"><XMarkIcon class="w-6 h-6" /></button>
           </div>
-          <div class="p-6 space-y-5">
+          <div class="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
              
              <div class="space-y-1 relative">
                <label class="text-xs font-bold text-gray-500 uppercase">Nama Peminjam <span class="text-red-500">*</span></label>
@@ -339,7 +390,7 @@
                      autocomplete="off"
                    />
                    <div v-if="selectedBookId" class="absolute right-3 top-2.5 text-[#00555A]">
-                       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
+                       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
                    </div>
                </div>
 
@@ -382,7 +433,11 @@
           </div>
           <div class="px-6 py-4 bg-gray-50 flex justify-end gap-3 rounded-b-2xl border-t border-gray-100">
             <button @click="cancelPinjam" class="px-4 py-2 text-gray-700 text-sm font-medium hover:bg-gray-100 rounded-lg transition">Batal</button>
-            <button @click="confirmPinjam" :disabled="!isPinjamFormValid" class="px-4 py-2 bg-[#00555A] text-white rounded-lg text-sm font-medium hover:bg-[#004448] shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition">Simpan Data</button>
+            <button @click="confirmPinjam" :disabled="!isPinjamFormValid || isProcessingPinjam" class="px-4 py-2 bg-[#00555A] text-white rounded-lg text-sm font-medium hover:bg-[#004448] shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2">
+              <svg v-if="isProcessingPinjam" class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+              <span v-if="isProcessingPinjam">Menyimpan...</span>
+              <span v-else>Simpan Data</span>
+            </button>
           </div>
         </div>
       </div>
@@ -397,7 +452,7 @@
              <h3 class="text-lg font-bold text-[#00555A]">{{ isEditing ? 'Edit Data Buku' : 'Tambah Buku Baru' }}</h3>
              <button @click="cancelBook" class="text-gray-400 hover:text-gray-600"><XMarkIcon class="w-6 h-6" /></button>
           </div>
-          <div class="p-6 space-y-4">
+          <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
              
              <div class="space-y-1">
                <label class="text-xs font-bold text-gray-500 uppercase">Kode Buku</label>
@@ -433,7 +488,21 @@
 
              <div class="space-y-1">
                <label class="text-xs font-bold text-gray-500 uppercase">Tempat</label>
-               <input type="text" v-model="newBuku.tempat" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00555A] focus:border-[#00555A] text-sm outline-none" placeholder="Masukkan tempat penyimpanan..." />
+               <input type="text" v-model="newBuku.tempat" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00555A] focus:border-[#00555A] text-sm outline-none" placeholder="Masukkan lokasi terbit buku..." />
+             </div>
+
+             <div class="space-y-1 pt-2 border-t border-gray-100">
+               <label class="text-xs font-bold text-gray-500 uppercase">Foto Buku</label>
+               <div class="flex items-center gap-4">
+                 <div class="shrink-0">
+                   <img v-if="previewFoto" :src="previewFoto" class="w-16 h-24 object-cover rounded border border-gray-200" alt="Preview" />
+                   <img v-else-if="existingFotoUrl" :src="existingFotoUrl" class="w-16 h-24 object-cover rounded border border-gray-200" alt="Current" />
+                   <div v-else class="w-16 h-24 bg-gray-100 rounded border border-gray-200 flex items-center justify-center">
+                     <span class="text-[10px] text-gray-400">No Photo</span>
+                   </div>
+                 </div>
+                 <input type="file" accept="image/*" @change="onFotoChange" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#00555A]/10 file:text-[#00555A] hover:file:bg-[#00555A]/20" />
+               </div>
              </div>
 
              <div v-if="isEditing" class="space-y-1 pt-2 border-t border-gray-100">
@@ -443,8 +512,10 @@
           </div>
           <div class="px-6 py-4 bg-gray-50 flex justify-end gap-3 rounded-b-2xl border-t border-gray-100">
             <button @click="cancelBook" class="px-4 py-2 text-gray-700 text-sm font-medium hover:bg-gray-100 rounded-lg transition">Batal</button>
-            <button @click="saveBook" :disabled="!isBookFormValid" class="px-4 py-2 bg-[#00555A] text-white rounded-lg text-sm font-medium hover:bg-[#004448] shadow-md disabled:opacity-50 transition">
-              {{ isEditing ? 'Update Buku' : 'Simpan Buku' }}
+            <button @click="saveBook" :disabled="!isBookFormValid || isSavingBook" class="px-4 py-2 bg-[#00555A] text-white rounded-lg text-sm font-medium hover:bg-[#004448] shadow-md disabled:opacity-50 transition flex items-center gap-2">
+              <svg v-if="isSavingBook" class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+              <span v-if="isSavingBook">Menyimpan...</span>
+              <span v-else>{{ isEditing ? 'Update Buku' : 'Simpan Buku' }}</span>
             </button>
           </div>
         </div>
@@ -483,10 +554,160 @@
             </button>
             <button 
               @click="handleAlertConfirm" 
-              class="px-5 py-2.5 rounded-xl text-white font-medium shadow-lg transition"
+              :disabled="isDeleting"
+              class="px-5 py-2.5 rounded-xl text-white font-medium shadow-lg transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               :class="alertState.type === 'error' ? 'bg-red-600 hover:bg-red-700 shadow-red-200' : (alertState.type === 'confirm' ? 'bg-[#00555A] hover:bg-[#004448] shadow-[#00555A]/30' : 'bg-green-600 hover:bg-green-700 shadow-green-200')"
             >
-              {{ alertState.type === 'confirm' ? 'Ya, Lanjutkan' : 'Oke, Mengerti' }}
+              <svg v-if="isDeleting" class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+              <span v-if="isDeleting">Memproses...</span>
+              <span v-else>{{ alertState.type === 'confirm' ? 'Ya, Lanjutkan' : 'Oke, Mengerti' }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </transition>
+
+    <transition name="fade">
+      <div v-if="showQrPreview" class="fixed inset-0 flex items-center justify-center z-50 bg-[#00282a]/50 backdrop-blur-sm p-4" @click.self="closeQrPreview">
+        <div class="bg-white shadow-2xl rounded-2xl p-8 max-w-sm w-full text-center relative">
+          <button @click="closeQrPreview" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition">
+            <XMarkIcon class="w-6 h-6" />
+          </button>
+          <h3 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-1">QR Label Buku</h3>
+          <p class="text-xs text-gray-400 mb-6">Arahkan kursor untuk mengunduh</p>
+          <div 
+            class="relative inline-block group/preview cursor-pointer" 
+            data-qr-container
+          >
+            <qrcode-vue 
+              :value="previewKodeBuku" 
+              :size="220" 
+              level="H" 
+              render-as="svg"
+              foreground="#1f2937"
+              class="transition-all duration-200 group-hover/preview:blur-sm"
+            />
+            <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover/preview:opacity-100 transition-opacity z-10">
+              <button 
+                @click.stop="downloadQrPng(previewKodeBuku, $event)" 
+                class="px-4 py-2 bg-white/90 rounded-xl shadow-md hover:bg-white transition flex items-center gap-2 text-sm font-bold text-[#00555A]"
+              >
+                <ArrowDownTrayIcon class="w-5 h-5" />
+                Download PNG
+              </button>
+            </div>
+          </div>
+          <p class="mt-5 font-mono font-bold text-[#00555A] text-xl">{{ previewKodeBuku }}</p>
+        </div>
+      </div>
+    </transition>
+
+    <transition name="fade">
+      <div v-if="showModeModal" class="fixed inset-0 flex items-center justify-center z-50 bg-[#00282a]/50 backdrop-blur-sm p-4" @click.self="showModeModal = false">
+        <div class="bg-white shadow-2xl rounded-2xl w-full max-w-md overflow-hidden">
+          <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-2xl">
+            <h3 class="text-lg font-bold text-[#00555A]">Pilih Mode Input</h3>
+            <button @click="showModeModal = false" class="text-gray-400 hover:text-gray-600"><XMarkIcon class="w-6 h-6" /></button>
+          </div>
+          <div class="p-6 grid grid-cols-2 gap-4">
+            <button @click="openManualMode" class="p-6 rounded-2xl border-2 border-gray-100 hover:border-[#00555A] hover:bg-[#00555A]/5 transition-all text-center group active:scale-95">
+              <PencilSquareIcon class="w-10 h-10 text-[#00555A] mx-auto mb-3 group-hover:scale-110 transition-transform" />
+              <h4 class="font-bold text-[#00555A] mb-1">Input Manual</h4>
+              <p class="text-xs text-gray-500">Isi form secara manual</p>
+            </button>
+            <button @click="openScanMode" class="p-6 rounded-2xl border-2 border-gray-100 hover:border-[#F26430] hover:bg-[#F26430]/5 transition-all text-center group active:scale-95">
+              <QrCodeIcon class="w-10 h-10 text-[#F26430] mx-auto mb-3 group-hover:scale-110 transition-transform" />
+              <h4 class="font-bold text-[#F26430] mb-1">Scan QR & Barcode</h4>
+              <p class="text-xs text-gray-500">Scan QR pengunjung dan label buku</p>
+            </button>
+          </div>
+        </div>
+      </div>
+    </transition>
+
+    <transition name="fade">
+      <div v-if="showScanModal" class="fixed inset-0 flex items-center justify-center z-50 bg-[#00282a]/50 backdrop-blur-sm p-4" @click.self="closeScanModal">
+        <div class="bg-white shadow-2xl rounded-2xl w-full max-w-lg overflow-hidden">
+          <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-2xl">
+            <h3 class="text-lg font-bold text-[#00555A] flex items-center gap-2">
+              <QrCodeIcon class="w-5 h-5 text-[#F26430]" />
+              Scan QR & Label Buku
+            </h3>
+            <button @click="closeScanModal" class="text-gray-400 hover:text-gray-600"><XMarkIcon class="w-6 h-6" /></button>
+          </div>
+          
+          <div class="relative h-[300px] bg-black overflow-hidden">
+            <qrcode-stream 
+              @detect="onScanDetect" 
+              @error="onScanError"
+              @camera-on="onScanCameraReady" 
+              :paused="false"
+              :track="paintScanBoundingBox"
+              class="h-full w-full object-cover"
+            >
+              <div v-if="scanCameraLoading" class="absolute inset-0 flex flex-col items-center justify-center bg-gray-900 z-10">
+                <div class="w-10 h-10 border-4 border-[#00555A] border-t-transparent rounded-full animate-spin mb-3"></div>
+                <p class="text-gray-400 text-xs font-mono uppercase tracking-widest">Inisialisasi Kamera...</p>
+              </div>
+
+              <div v-if="scanCameraError" class="absolute inset-0 flex flex-col items-center justify-center bg-gray-900 z-50 p-6 text-center">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-12 h-12 text-red-500 mb-2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                </svg>
+                <p class="text-white font-bold mb-1">Akses Kamera Gagal</p>
+                <p class="text-gray-400 text-sm">{{ scanCameraError }}</p>
+              </div>
+
+              <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div class="relative w-48 h-48 border-2 border-white/30 rounded-3xl overflow-hidden">
+                  <div class="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-[#F26430] rounded-tl-lg"></div>
+                  <div class="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-[#F26430] rounded-tr-lg"></div>
+                  <div class="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-[#F26430] rounded-bl-lg"></div>
+                  <div class="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-[#F26430] rounded-br-lg"></div>
+                  <div class="absolute w-full h-1 bg-gradient-to-r from-transparent via-[#F26430] to-transparent shadow-[0_0_15px_#F26430] animate-scan-line"></div>
+                </div>
+              </div>
+            </qrcode-stream>
+          </div>
+          
+          <div class="p-5 space-y-4">
+            <div class="flex gap-3">
+              <div 
+                class="flex-1 px-4 py-3 rounded-xl text-sm font-bold flex items-center gap-2 transition-colors"
+                :class="scannedBook 
+                  ? 'bg-green-50 text-green-700 border border-green-200' 
+                  : 'bg-gray-50 text-gray-400 border border-gray-200'"
+              >
+                <BookOpenIcon class="w-4 h-4 shrink-0" />
+                <span class="truncate">{{ scannedBook ? scannedBook.judul : 'Buku: Belum discan' }}</span>
+              </div>
+              <div 
+                class="flex-1 px-4 py-3 rounded-xl text-sm font-bold flex items-center gap-2 transition-colors"
+                :class="scannedUser 
+                  ? 'bg-green-50 text-green-700 border border-green-200' 
+                  : 'bg-gray-50 text-gray-400 border border-gray-200'"
+              >
+                <UserIcon class="w-4 h-4 shrink-0" />
+                <span class="truncate">{{ scannedUser ? scannedUser.nama_lengkap : 'Pengunjung: Belum discan' }}</span>
+              </div>
+            </div>
+            
+            <div 
+              v-if="scanStatusMessage" 
+              class="text-xs text-center px-3 py-2 rounded-lg transition-all"
+              :class="scanStatusError 
+                ? 'bg-red-50 text-red-500 border border-red-100' 
+                : 'bg-green-50 text-green-600 border border-green-100'"
+            >
+              {{ scanStatusMessage }}
+            </div>
+            
+            <button 
+              @click="proceedToForm"
+              :disabled="!scannedBook || !scannedUser"
+              class="w-full py-3 bg-[#00555A] hover:bg-[#004448] text-white rounded-xl text-sm font-bold shadow-md transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 active:scale-[0.98]"
+            >
+              Lanjut ke Form →
             </button>
           </div>
         </div>
@@ -500,14 +721,26 @@
 import { ref, reactive, computed, onMounted } from "vue";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
+import QrcodeVue from "qrcode.vue";
+import { QrcodeStream, setZXingModuleOverrides } from 'vue-qrcode-reader';
 import api from '@/api';
 import { 
   BookOpenIcon, PlusIcon, ClockIcon, ArchiveBoxIcon, 
   XMarkIcon, QueueListIcon, Square3Stack3DIcon,
   CheckCircleIcon, XCircleIcon, ExclamationTriangleIcon,
   PencilSquareIcon, TrashIcon, MagnifyingGlassIcon,
-  ArrowDownTrayIcon, ChatBubbleLeftRightIcon
+  ArrowDownTrayIcon, ChatBubbleLeftRightIcon,
+  QrCodeIcon, UserIcon
 } from "@heroicons/vue/24/outline";
+
+setZXingModuleOverrides({
+  locateFile: (path, prefix) => {
+    if (path.endsWith('.wasm')) {
+      return '/wasm/zxing_reader.wasm';
+    }
+    return prefix + path;
+  },
+});
 
 const listUsers = ref([]); 
 const searchUser = ref(""); 
@@ -518,7 +751,9 @@ const searchBook = ref("");
 const showBookDropdown = ref(false); 
 const selectedBookId = ref(null); 
 
+const activeMainTab = ref('Katalog Buku & Stok');
 const searchSirkulasi = ref("");
+const activeSirkulasiTab = ref('Sedang Dipinjam');
 const searchKatalog = ref(""); 
 
 const showPinjamModal = ref(false);
@@ -531,7 +766,14 @@ const daftarBuku = ref([]);
 
 const isEditing = ref(false);
 const currentBookId = ref(null);
-const newBuku = ref({ kode_buku: "", judul: "", penulis: "", kategori: "", tempat: "", tahun_buku: "", jumlah_tersedia: 1 });
+const previewFoto = ref(null);
+const existingFotoUrl = ref(null);
+const newBuku = ref({ kode_buku: "", judul: "", penulis: "", kategori: "", tempat: "", tahun_buku: "", jumlah_tersedia: 1, foto_buku: null });
+const isSavingBook = ref(false);
+const isProcessingPinjam = ref(false);
+const isDeleting = ref(false);
+const returningBookId = ref(null);
+const isReturnRequestInFlight = ref(false);
 
 const alertState = reactive({
   show: false,
@@ -539,6 +781,22 @@ const alertState = reactive({
   message: '',
   onConfirm: null 
 });
+
+const showQrPreview = ref(false);
+const previewKodeBuku = ref("");
+
+const showModeModal = ref(false);
+
+const showScanModal = ref(false);
+const scanCameraLoading = ref(true);
+const scanCameraError = ref('');
+const scannedBook = ref(null);
+const scannedUser = ref(null);
+const scanStatusMessage = ref('');
+const scanStatusError = ref(false);
+const scanProcessing = ref(false);
+const lastScannedUserToken = ref('');
+let lastScanTime = 0;
 
 const isPinjamFormValid = computed(() => {
   const isPhoneValid = /^[0-9]+$/.test(newPinjam.value.noHp);
@@ -662,10 +920,25 @@ const showConfirmBox = (message, onConfirmAction) => {
   alertState.show = true;
 };
 
-const closeAlert = () => alertState.show = false;
-const handleAlertConfirm = () => {
-  if (alertState.type === 'confirm' && alertState.onConfirm) alertState.onConfirm();
-  closeAlert();
+const closeAlert = () => {
+  alertState.show = false;
+  returningBookId.value = null;
+};
+const handleAlertConfirm = async () => {
+  if (isDeleting.value) return;
+  if (alertState.type === 'confirm' && alertState.onConfirm) {
+    isDeleting.value = true;
+    try {
+      await alertState.onConfirm();
+    } finally {
+      isDeleting.value = false;
+      if (alertState.type === 'confirm') {
+        closeAlert();
+      }
+    }
+  } else {
+    closeAlert();
+  }
 };
 
 const fetchData = async () => {
@@ -701,24 +974,15 @@ const selectBook = (buku) => {
 };
 
 const openPinjamModal = () => {
-  searchUser.value = ""; selectedUserId.value = null;
-  searchBook.value = ""; selectedBookId.value = null;
-  newPinjam.value.noHp = ""; 
-  
-  const today = new Date();
-  newPinjam.value.tanggalPinjam = today.toISOString().split('T')[0];
-  
-  const nextWeek = new Date(today);
-  nextWeek.setDate(today.getDate() + 7);
-  newPinjam.value.tanggalKembali = nextWeek.toISOString().split('T')[0];
-  
-  showPinjamModal.value = true;
+  showModeModal.value = true;
 };
 
 const cancelPinjam = () => { showPinjamModal.value = false; closeDropdowns(); };
 
 const confirmPinjam = async () => {
+  if (isProcessingPinjam.value) return;
   if (!isPinjamFormValid.value) return;
+  isProcessingPinjam.value = true;
   try {
       const payload = {
           id_user: selectedUserId.value, 
@@ -735,25 +999,51 @@ const confirmPinjam = async () => {
       showAlertBox("Berhasil mencatat peminjaman!", "success");
   } catch (error) {
       showAlertBox(error.response?.data?.message || "Gagal menyimpan data peminjaman.", "error");
+  } finally {
+      isProcessingPinjam.value = false;
   }
 };
 
 const kembalikanBuku = (pinjam) => {
+  if (returningBookId.value !== null) return;
+  returningBookId.value = pinjam.id;
+
   showConfirmBox(`Kembalikan buku "${pinjam.judulBuku}"?`, async () => {
+    isReturnRequestInFlight.value = true;
     try {
         await api.post(`/staff/peminjaman/${pinjam.id}/return`);
         await fetchData(); 
         showAlertBox("Buku berhasil dikembalikan.", "success");
     } catch (e) { 
         showAlertBox(e.response?.data?.message || "Gagal memproses pengembalian.", "error"); 
+    } finally {
+        isReturnRequestInFlight.value = false;
+        returningBookId.value = null;
     }
   });
+};
+
+const onFotoChange = (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    newBuku.value.foto_buku = file;
+    if (previewFoto.value) URL.revokeObjectURL(previewFoto.value);
+    previewFoto.value = URL.createObjectURL(file);
+  } else {
+    newBuku.value.foto_buku = null;
+    if (previewFoto.value) URL.revokeObjectURL(previewFoto.value);
+    previewFoto.value = null;
+  }
 };
 
 const openBookModal = (mode, buku = null) => {
   if (mode === 'edit' && buku) {
     isEditing.value = true;
     currentBookId.value = buku.id_buku;
+    existingFotoUrl.value = buku.foto_buku ? ('https://tamuq.my.id/storage/' + buku.foto_buku) : null;
+    if (previewFoto.value) URL.revokeObjectURL(previewFoto.value);
+    previewFoto.value = null;
+
     newBuku.value = { 
       kode_buku: buku.kode_buku || "", 
       judul: buku.judul, 
@@ -761,33 +1051,57 @@ const openBookModal = (mode, buku = null) => {
       kategori: buku.kategori, 
       tempat: buku.tempat || "", 
       tahun_buku: buku.tahun_buku || "",
-      jumlah_tersedia: buku.jumlah_tersedia 
+      jumlah_tersedia: buku.jumlah_tersedia,
+      foto_buku: null
     };
   } else {
     isEditing.value = false;
     currentBookId.value = null;
-    newBuku.value = { kode_buku: "", judul: "", penulis: "", kategori: "", tempat: "", tahun_buku: "", jumlah_tersedia: 1 };
+    existingFotoUrl.value = null;
+    if (previewFoto.value) URL.revokeObjectURL(previewFoto.value);
+    previewFoto.value = null;
+    newBuku.value = { kode_buku: "", judul: "", penulis: "", kategori: "", tempat: "", tahun_buku: "", jumlah_tersedia: 1, foto_buku: null };
   }
   showBookModal.value = true;
 };
 
-const cancelBook = () => showBookModal.value = false;
+const cancelBook = () => {
+  if (previewFoto.value) URL.revokeObjectURL(previewFoto.value);
+  previewFoto.value = null;
+  showBookModal.value = false;
+};
 
 const saveBook = async () => {
+  if (isSavingBook.value) return;
   if (!isBookFormValid.value) return;
+  isSavingBook.value = true;
   
   try {
+    const formData = new FormData();
+    Object.keys(newBuku.value).forEach(key => {
+      if (newBuku.value[key] !== null && newBuku.value[key] !== undefined && newBuku.value[key] !== "") {
+        formData.append(key, newBuku.value[key]);
+      }
+    });
+
     if (isEditing.value && currentBookId.value) {
-      await api.put(`/buku/${currentBookId.value}`, newBuku.value);
+      formData.append('_method', 'PUT');
+      await api.post(`/buku/${currentBookId.value}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
       showAlertBox("Data buku berhasil diperbarui!", "success");
     } else {
-      await api.post('/buku', newBuku.value);
+      await api.post('/buku', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
       showAlertBox("Buku berhasil ditambahkan!", "success");
     }
-    showBookModal.value = false;
+    cancelBook();
     await fetchData(); 
   } catch (e) { 
     showAlertBox(e.response?.data?.message || "Gagal menyimpan data buku.", "error"); 
+  } finally {
+    isSavingBook.value = false;
   }
 };
 
@@ -803,6 +1117,207 @@ const deleteBuku = (buku) => {
   });
 }
 
+const openQrPreview = (kodeBuku) => {
+  previewKodeBuku.value = kodeBuku;
+  showQrPreview.value = true;
+};
+
+const closeQrPreview = () => {
+  showQrPreview.value = false;
+  previewKodeBuku.value = "";
+};
+
+const downloadQrPng = (kodeBuku, event) => {
+  event.stopPropagation();
+  const container = event.target.closest('[data-qr-container]');
+  const svgElement = container?.querySelector('svg');
+  if (!svgElement) return;
+
+  const clonedSvg = svgElement.cloneNode(true);
+  clonedSvg.setAttribute('width', '512');
+  clonedSvg.setAttribute('height', '512');
+
+  const svgData = new XMLSerializer().serializeToString(clonedSvg);
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+
+  const img = new Image();
+  const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(svgBlob);
+
+  img.onload = () => {
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, 512, 512);
+    ctx.drawImage(img, 0, 0, 512, 512);
+    URL.revokeObjectURL(url);
+
+    const pngUrl = canvas.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = pngUrl;
+    a.download = `QR_${kodeBuku}.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  img.src = url;
+};
+
+const openManualMode = () => {
+  showModeModal.value = false;
+
+  searchUser.value = ""; selectedUserId.value = null;
+  searchBook.value = ""; selectedBookId.value = null;
+  newPinjam.value.noHp = "";
+  
+  const today = new Date();
+  newPinjam.value.tanggalPinjam = today.toISOString().split('T')[0];
+  const nextWeek = new Date(today);
+  nextWeek.setDate(today.getDate() + 7);
+  newPinjam.value.tanggalKembali = nextWeek.toISOString().split('T')[0];
+  
+  showPinjamModal.value = true;
+};
+
+const openScanMode = () => {
+  showModeModal.value = false;
+
+  scannedBook.value = null;
+  scannedUser.value = null;
+  scanStatusMessage.value = '';
+  scanStatusError.value = false;
+  scanCameraLoading.value = true;
+  scanCameraError.value = '';
+  scanProcessing.value = false;
+  lastScannedUserToken.value = '';
+  lastScanTime = 0;
+
+  showScanModal.value = true;
+};
+
+const closeScanModal = () => {
+  showScanModal.value = false;
+};
+
+const onScanCameraReady = () => {
+  scanCameraLoading.value = false;
+};
+
+const onScanError = (err) => {
+  scanCameraLoading.value = false;
+  scanCameraError.value = err.message || "Camera permission denied";
+};
+
+const paintScanBoundingBox = (detectedCodes, ctx) => {
+  for (const detectedCode of detectedCodes) {
+    const { boundingBox: { x, y, width, height } } = detectedCode;
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = '#00555A';
+    ctx.strokeRect(x, y, width, height);
+  }
+};
+
+const playSound = (type) => {
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  if (type === 'success') {
+    osc.frequency.value = 1000;
+    osc.type = 'sine';
+    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.5);
+  } else {
+    osc.frequency.value = 150;
+    osc.type = 'sawtooth';
+    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.3);
+  }
+};
+
+const onScanDetect = async (detectedCodes) => {
+  const now = Date.now();
+  if (now - lastScanTime < 1500) return;
+  if (scanProcessing.value) return;
+
+  const rawValue = detectedCodes[0]?.rawValue;
+  if (!rawValue) return;
+
+  if (scannedBook.value && scannedBook.value.kode_buku &&
+      scannedBook.value.kode_buku.toLowerCase() === rawValue.toLowerCase()) return;
+  if (lastScannedUserToken.value === rawValue) return;
+
+  lastScanTime = now;
+  scanProcessing.value = true;
+  scanStatusMessage.value = '';
+  scanStatusError.value = false;
+
+  try {
+    const matchedBook = daftarBuku.value.find(b =>
+      b.kode_buku && b.kode_buku.toLowerCase() === rawValue.toLowerCase()
+    );
+
+    if (matchedBook) {
+      scannedBook.value = matchedBook;
+      selectedBookId.value = matchedBook.id_buku;
+      searchBook.value = matchedBook.judul;
+      scanStatusMessage.value = `✓ Buku "${matchedBook.judul}" terdeteksi!`;
+      scanStatusError.value = false;
+      playSound('success');
+      return;
+    }
+
+    const response = await api.post('/staff/peminjaman/scan-user', { qr_code: rawValue });
+    const userData = response.data.data;
+    scannedUser.value = userData;
+    selectedUserId.value = userData.id_user;
+    searchUser.value = userData.nama_lengkap;
+    lastScannedUserToken.value = rawValue;
+    scanStatusMessage.value = `✓ Pengunjung "${userData.nama_lengkap}" terdeteksi!`;
+    scanStatusError.value = false;
+    playSound('success');
+
+  } catch (error) {
+    const msg = error.response?.data?.message || 'QR tidak dikenali.';
+    scanStatusMessage.value = msg;
+    scanStatusError.value = true;
+    playSound('error');
+    setTimeout(() => {
+      if (scanStatusMessage.value === msg) scanStatusMessage.value = '';
+    }, 3000);
+  } finally {
+    scanProcessing.value = false;
+  }
+};
+
+const proceedToForm = () => {
+  if (!scannedBook.value || !scannedUser.value) return;
+
+  showScanModal.value = false;
+
+  searchUser.value = scannedUser.value.nama_lengkap;
+  selectedUserId.value = scannedUser.value.id_user;
+  searchBook.value = scannedBook.value.judul;
+  selectedBookId.value = scannedBook.value.id_buku;
+
+  newPinjam.value.noHp = "";
+
+  const today = new Date();
+  newPinjam.value.tanggalPinjam = today.toISOString().split('T')[0];
+  const nextWeek = new Date(today);
+  nextWeek.setDate(today.getDate() + 7);
+  newPinjam.value.tanggalKembali = nextWeek.toISOString().split('T')[0];
+
+  showPinjamModal.value = true;
+};
+
 onMounted(fetchData);
 </script>
 
@@ -811,4 +1326,14 @@ onMounted(fetchData);
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+
+@keyframes scan-line {
+  0% { top: 0%; opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+.animate-scan-line {
+  animation: scan-line 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
 </style>
