@@ -563,7 +563,7 @@ const downloadFileUser = async (filePath) => {
   }
   try {
     const fileName = filePath.split('/').pop();
-    const response = await api.get(`/download-pendukung/${fileName}`, { responseType: 'blob' });
+    const response = await api.get(`/download-pendukung/${fileName}`, { responseType: 'blob', actionType: 'download' });
     const blob = new Blob([response.data], { type: response.headers['content-type'] });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -713,21 +713,47 @@ const openFileUserPreview = async (pengajuan) => {
 
   try {
     const fileName = pengajuan.file_pendukung.split('/').pop();
-    const response = await api.get(`/download-pendukung/${fileName}`, { responseType: 'blob' });
-    const blob = new Blob([response.data], { type: response.headers['content-type'] });
-    const blobUrl = URL.createObjectURL(blob);
+    const response = await api.get(`/preview-pendukung/${fileName}`, { responseType: 'blob', actionType: 'preview' });
+    const contentType = response.headers['content-type'] || '';
+
+    if (contentType.includes('application/json')) {
+      let msg = 'Dokumen tidak dapat dimuat dari server.';
+      try {
+        const text = await response.data.text();
+        const json = JSON.parse(text);
+        if (json.message) msg = json.message;
+      } catch (e) {}
+      fileUserPreview.value.show = false;
+      showAlert('error', 'Gagal Memuat', msg);
+      return;
+    }
+
     const ext = fileName.split('.').pop().toLowerCase();
+    const isPdf = contentType.includes('pdf') || ext === 'pdf';
+
+    const blob = new Blob([response.data], { type: isPdf ? 'application/pdf' : contentType });
+    const blobUrl = URL.createObjectURL(blob);
 
     fileUserPreview.value = {
       show: true,
       url: blobUrl,
-      type: ext === 'pdf' ? 'pdf' : 'image',
+      type: isPdf ? 'pdf' : 'image',
       isLoading: false,
       filePath: pengajuan.file_pendukung
     };
   } catch (error) {
     fileUserPreview.value.show = false;
-    showAlert('error', 'Gagal Memuat', 'File tidak dapat dimuat dari server.');
+    let msg = 'File tidak dapat dimuat dari server.';
+    if (error.response?.data instanceof Blob && (error.response.data.type || '').includes('application/json')) {
+      try {
+        const text = await error.response.data.text();
+        const json = JSON.parse(text);
+        if (json.message) msg = json.message;
+      } catch (e) {}
+    } else if (error.response?.data?.message) {
+      msg = error.response.data.message;
+    }
+    showAlert('error', 'Gagal Memuat', msg);
   }
 };
 
@@ -756,26 +782,52 @@ const openPreviewDocument = async (pengajuan) => {
     try {
         const fileName = pengajuan.file_balasan.split('/').pop();
         
-        const response = await api.get(`/download-balasan/${fileName}`, {
-            responseType: 'blob'
+        const response = await api.get(`/preview-balasan/${fileName}`, {
+            responseType: 'blob',
+            actionType: 'preview',
         });
+        const contentType = response.headers['content-type'] || '';
+
+        if (contentType.includes('application/json')) {
+            let msg = 'Dokumen tidak dapat dimuat dari server.';
+            try {
+                const text = await response.data.text();
+                const json = JSON.parse(text);
+                if (json.message) msg = json.message;
+            } catch (e) {}
+            previewModal.value.show = false;
+            showAlert('error', 'Gagal Memuat', msg);
+            return;
+        }
+
+        const ext = fileName.split('.').pop().toLowerCase();
+        const isPdf = contentType.includes('pdf') || ext === 'pdf';
 
         const blob = new Blob([response.data], {
-            type: response.headers['content-type']
+            type: isPdf ? 'application/pdf' : contentType
         });
         const blobUrl = URL.createObjectURL(blob);
-        const ext = fileName.split('.').pop().toLowerCase();
 
         previewModal.value = {
             show: true,
             url: blobUrl,
-            type: ext === 'pdf' ? 'pdf' : 'image',
+            type: isPdf ? 'pdf' : 'image',
             isLoading: false
         };
 
     } catch (error) {
         previewModal.value.show = false;
-        showAlert('error', 'Gagal Memuat', 'Dokumen tidak dapat dimuat dari server.');
+        let msg = 'Dokumen tidak dapat dimuat dari server.';
+        if (error.response?.data instanceof Blob && (error.response.data.type || '').includes('application/json')) {
+            try {
+                const text = await error.response.data.text();
+                const json = JSON.parse(text);
+                if (json.message) msg = json.message;
+            } catch (e) {}
+        } else if (error.response?.data?.message) {
+            msg = error.response.data.message;
+        }
+        showAlert('error', 'Gagal Memuat', msg);
     }
 };
 

@@ -27,6 +27,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/pengajuan', [PengajuanSuratController::class, 'index']);
     Route::get('/download-pendukung/{filename}', [PengajuanSuratController::class, 'downloadPendukung']);
     Route::get('/download-balasan/{filename}', [PengajuanSuratController::class, 'downloadBalasan']);
+    Route::get('/preview-pendukung/{filename}', [PengajuanSuratController::class, 'previewPendukung']);
+    Route::get('/preview-balasan/{filename}', [PengajuanSuratController::class, 'previewBalasan']);
     Route::get('/user/buku-saya', [PeminjamanController::class, 'indexUser']);
     Route::get('/buku', [BukuController::class, 'index']);
     Route::get('/buku/kategori', [BukuController::class, 'kategoriList']);

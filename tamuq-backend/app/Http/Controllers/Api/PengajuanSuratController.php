@@ -316,4 +316,105 @@ class PengajuanSuratController extends Controller
 
         return response()->json(['message' => 'File balasan fisik tidak ditemukan di server.'], 404);
     }
+
+    public function previewPendukung(Request $request, $filename)
+    {
+        if (!$request->user()) {
+            return response()->json(['message' => 'Sesi habis atau Anda belum login.'], 401);
+        }
+
+        $user = $request->user();
+        $escapedFilename = str_replace(['%', '_'], ['\\%', '\\_'], $filename);
+        $pengajuan = PengajuanSurat::where('file_pendukung', $filename)
+            ->orWhere('file_pendukung', 'LIKE', '%/' . $escapedFilename)
+            ->first();
+
+        if (!$pengajuan) {
+            return response()->json(['message' => 'Data pengajuan tidak ditemukan di database.'], 404);
+        }
+
+        if (strtolower($user->role) === 'pengunjung' && $pengajuan->user_id != $user->id_user) {
+            return response()->json(['message' => 'Akses Ditolak! Anda tidak berhak melihat file ini.'], 403);
+        }
+
+        $dbPath = $pengajuan->file_pendukung;
+
+        // Cari file di berbagai lokasi disk (sama seperti downloadPendukung)
+        $resolvedPath = null;
+        $resolvedDisk = null;
+
+        if (Storage::disk('local')->exists($dbPath)) {
+            $resolvedPath = $dbPath;
+            $resolvedDisk = 'local';
+        } elseif (Storage::disk('public')->exists($dbPath)) {
+            $resolvedPath = $dbPath;
+            $resolvedDisk = 'public';
+        } elseif (Storage::disk('local')->exists('pengajuan_files/' . $filename)) {
+            $resolvedPath = 'pengajuan_files/' . $filename;
+            $resolvedDisk = 'local';
+        } elseif (Storage::disk('public')->exists('pengajuan_files/' . $filename)) {
+            $resolvedPath = 'pengajuan_files/' . $filename;
+            $resolvedDisk = 'public';
+        }
+
+        if (!$resolvedPath) {
+            return response()->json(['message' => 'File fisik tidak ditemukan di server.'], 404);
+        }
+
+        $mimeType = Storage::disk($resolvedDisk)->mimeType($resolvedPath) ?: 'application/octet-stream';
+
+        return Storage::disk($resolvedDisk)->response($resolvedPath, null, [
+            'Content-Type' => $mimeType,
+        ], 'inline');
+    }
+
+    public function previewBalasan(Request $request, $filename)
+    {
+        if (!$request->user()) {
+            return response()->json(['message' => 'Sesi habis atau Anda belum login.'], 401);
+        }
+
+        $user = $request->user();
+        $escapedFilename = str_replace(['%', '_'], ['\\%', '\\_'], $filename);
+        $pengajuan = PengajuanSurat::where('file_balasan', $filename)
+            ->orWhere('file_balasan', 'LIKE', '%/' . $escapedFilename)
+            ->first();
+
+        if (!$pengajuan) {
+            return response()->json(['message' => 'Data pengajuan tidak ditemukan di database.'], 404);
+        }
+
+        if (strtolower($user->role) === 'pengunjung' && $pengajuan->user_id != $user->id_user) {
+            return response()->json(['message' => 'Akses Ditolak! Anda tidak berhak melihat file ini.'], 403);
+        }
+
+        $dbPath = $pengajuan->file_balasan;
+
+        $resolvedPath = null;
+        $resolvedDisk = null;
+
+        if (Storage::disk('local')->exists($dbPath)) {
+            $resolvedPath = $dbPath;
+            $resolvedDisk = 'local';
+        } elseif (Storage::disk('public')->exists($dbPath)) {
+            $resolvedPath = $dbPath;
+            $resolvedDisk = 'public';
+        } elseif (Storage::disk('local')->exists('balasan_files/' . $filename)) {
+            $resolvedPath = 'balasan_files/' . $filename;
+            $resolvedDisk = 'local';
+        } elseif (Storage::disk('public')->exists('balasan_files/' . $filename)) {
+            $resolvedPath = 'balasan_files/' . $filename;
+            $resolvedDisk = 'public';
+        }
+
+        if (!$resolvedPath) {
+            return response()->json(['message' => 'File balasan fisik tidak ditemukan di server.'], 404);
+        }
+
+        $mimeType = Storage::disk($resolvedDisk)->mimeType($resolvedPath) ?: 'application/octet-stream';
+
+        return Storage::disk($resolvedDisk)->response($resolvedPath, null, [
+            'Content-Type' => $mimeType,
+        ], 'inline');
+    }
 }

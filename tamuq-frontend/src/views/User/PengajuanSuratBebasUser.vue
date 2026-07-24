@@ -130,10 +130,11 @@
                     v-if="item.file_pendukung" 
                     @click="previewFileSecure(item.file_pendukung, 'pendukung', item.id)" 
                     :disabled="previewingKey !== null"
-                    class="text-xs text-[#00555A] underline mt-1 hover:text-[#F26430] transition-colors cursor-pointer text-left disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1.5"
+                    class="inline-flex items-center gap-1 px-2 py-1 bg-[#F26430]/10 text-[#F26430] hover:bg-[#F26430]/20 border border-[#F26430]/20 rounded-lg text-xs font-medium transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed mt-1"
                   >
-                    <svg v-if="previewingKey === `${item.id}-pendukung`" class="animate-spin h-3.5 w-3.5 text-[#00555A]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                    <span>{{ previewingKey === `${item.id}-pendukung` ? 'Memuat...' : 'Lihat Bukti Upload' }}</span>
+                    <svg v-if="previewingKey === `${item.id}-pendukung`" class="animate-spin h-3 w-3 text-[#F26430]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    <EyeIcon v-else class="w-3 h-3" />
+                    <span>{{ previewingKey === `${item.id}-pendukung` ? 'Memuat...' : 'Preview' }}</span>
                   </button>
                 </div>
               </div>
@@ -267,7 +268,7 @@ import { useAuthStore } from '@/stores/auth';
 import { 
   DocumentCheckIcon, UserIcon, IdentificationIcon, CloudArrowUpIcon, 
   PaperAirplaneIcon, InboxIcon, DocumentTextIcon, ClockIcon, 
-  ArrowDownTrayIcon, ArrowPathIcon,
+  ArrowDownTrayIcon, ArrowPathIcon, EyeIcon,
   CheckCircleIcon, XCircleIcon, ExclamationTriangleIcon, QuestionMarkCircleIcon
 } from "@heroicons/vue/24/outline";
 
@@ -459,25 +460,50 @@ const previewFileSecure = async (filePath, tipe, itemId) => {
   try {
     const fileName = filePath.split('/').pop();
     const endpoint = tipe === 'pendukung' 
-      ? `/download-pendukung/${fileName}` 
-      : `/download-balasan/${fileName}`;
+      ? `/preview-pendukung/${fileName}` 
+      : `/preview-balasan/${fileName}`;
 
-    const response = await api.get(endpoint, { responseType: 'blob' });
+    const response = await api.get(endpoint, { responseType: 'blob', actionType: 'preview' });
     const contentType = response.headers['content-type'] || '';
-    const blob = new Blob([response.data], { type: contentType });
+
+    if (contentType.includes('application/json')) {
+      let msg = 'Gagal memuat file dari server.';
+      try {
+        const text = await response.data.text();
+        const json = JSON.parse(text);
+        if (json.message) msg = json.message;
+      } catch (e) {}
+      openModal('error', 'Gagal Memuat File', msg, 'Tutup');
+      return;
+    }
+
+    const ext = fileName.split('.').pop().toLowerCase();
+    const isPdf = contentType.includes('pdf') || ext === 'pdf';
+
+    const blob = new Blob([response.data], { type: isPdf ? 'application/pdf' : contentType });
     const url = window.URL.createObjectURL(blob);
 
     previewModal.value = {
       show: true,
       url,
-      type: contentType.includes('pdf') ? 'pdf' : 'image',
+      type: isPdf ? 'pdf' : 'image',
       filePath,
       tipe,
       itemId,
     };
   } catch (error) {
     console.error("Gagal memuat preview:", error);
-    openModal('error', 'Akses Ditolak', 'File tidak ditemukan atau Anda tidak memiliki izin untuk melihatnya.', 'Tutup');
+    let msg = 'File tidak ditemukan atau Anda tidak memiliki izin untuk melihatnya.';
+    if (error.response?.data instanceof Blob && (error.response.data.type || '').includes('application/json')) {
+      try {
+        const text = await error.response.data.text();
+        const json = JSON.parse(text);
+        if (json.message) msg = json.message;
+      } catch (e) {}
+    } else if (error.response?.data?.message) {
+      msg = error.response.data.message;
+    }
+    openModal('error', 'Gagal Memuat File', msg, 'Tutup');
   } finally {
     previewingKey.value = null;
   }
@@ -508,7 +534,8 @@ const downloadFileSecure = async (filePath, tipe, itemId) => {
       : `/download-balasan/${fileName}`;
 
     const response = await api.get(endpoint, {
-      responseType: 'blob', // Mengambil format biner
+      responseType: 'blob', 
+      actionType: 'download',
     });
 
     const blob = new Blob([response.data], { type: response.headers['content-type'] });

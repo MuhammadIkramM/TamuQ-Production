@@ -123,12 +123,12 @@
               </td>
               <td class="px-6 py-3 text-sm font-mono text-gray-600">{{ buku.kode_buku || '-' }}</td>
               <td class="px-3 py-3 text-center">
-                <img 
-                  v-if="buku.foto_buku" 
-                  :src="buku.foto_buku" 
-                  alt="Foto Buku"
-                  class="w-10 h-14 object-cover rounded border border-gray-200 mx-auto"
-                />
+                  <img 
+                    v-if="buku.foto_buku" 
+                    :src="'https://tamuq.my.id/storage/' + buku.foto_buku" 
+                    alt="Foto Buku"
+                    class="w-10 h-14 object-cover rounded border border-gray-200 mx-auto"
+                  />
               </td>
               <td class="px-6 py-3 text-sm font-medium text-gray-800">{{ buku.judul }}</td>
               <td class="px-6 py-3 text-sm text-gray-500">
@@ -491,6 +491,20 @@
                <input type="text" v-model="newBuku.tempat" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00555A] focus:border-[#00555A] text-sm outline-none" placeholder="Masukkan lokasi terbit buku..." />
              </div>
 
+             <div class="space-y-1 pt-2 border-t border-gray-100">
+               <label class="text-xs font-bold text-gray-500 uppercase">Foto Buku</label>
+               <div class="flex items-center gap-4">
+                 <div class="shrink-0">
+                   <img v-if="previewFoto" :src="previewFoto" class="w-16 h-24 object-cover rounded border border-gray-200" alt="Preview" />
+                   <img v-else-if="existingFotoUrl" :src="existingFotoUrl" class="w-16 h-24 object-cover rounded border border-gray-200" alt="Current" />
+                   <div v-else class="w-16 h-24 bg-gray-100 rounded border border-gray-200 flex items-center justify-center">
+                     <span class="text-[10px] text-gray-400">No Photo</span>
+                   </div>
+                 </div>
+                 <input type="file" accept="image/*" @change="onFotoChange" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#00555A]/10 file:text-[#00555A] hover:file:bg-[#00555A]/20" />
+               </div>
+             </div>
+
              <div v-if="isEditing" class="space-y-1 pt-2 border-t border-gray-100">
                 <label class="text-xs font-bold text-gray-500 uppercase">Jumlah Stok <span class="text-red-500">*</span></label>
                 <input type="number" min="0" v-model="newBuku.jumlah_tersedia" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00555A] focus:border-[#00555A] text-sm outline-none" />
@@ -752,7 +766,9 @@ const daftarBuku = ref([]);
 
 const isEditing = ref(false);
 const currentBookId = ref(null);
-const newBuku = ref({ kode_buku: "", judul: "", penulis: "", kategori: "", tempat: "", tahun_buku: "", jumlah_tersedia: 1 });
+const previewFoto = ref(null);
+const existingFotoUrl = ref(null);
+const newBuku = ref({ kode_buku: "", judul: "", penulis: "", kategori: "", tempat: "", tahun_buku: "", jumlah_tersedia: 1, foto_buku: null });
 const isSavingBook = ref(false);
 const isProcessingPinjam = ref(false);
 const isDeleting = ref(false);
@@ -1007,10 +1023,27 @@ const kembalikanBuku = (pinjam) => {
   });
 };
 
+const onFotoChange = (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    newBuku.value.foto_buku = file;
+    if (previewFoto.value) URL.revokeObjectURL(previewFoto.value);
+    previewFoto.value = URL.createObjectURL(file);
+  } else {
+    newBuku.value.foto_buku = null;
+    if (previewFoto.value) URL.revokeObjectURL(previewFoto.value);
+    previewFoto.value = null;
+  }
+};
+
 const openBookModal = (mode, buku = null) => {
   if (mode === 'edit' && buku) {
     isEditing.value = true;
     currentBookId.value = buku.id_buku;
+    existingFotoUrl.value = buku.foto_buku ? ('https://tamuq.my.id/storage/' + buku.foto_buku) : null;
+    if (previewFoto.value) URL.revokeObjectURL(previewFoto.value);
+    previewFoto.value = null;
+
     newBuku.value = { 
       kode_buku: buku.kode_buku || "", 
       judul: buku.judul, 
@@ -1018,17 +1051,25 @@ const openBookModal = (mode, buku = null) => {
       kategori: buku.kategori, 
       tempat: buku.tempat || "", 
       tahun_buku: buku.tahun_buku || "",
-      jumlah_tersedia: buku.jumlah_tersedia 
+      jumlah_tersedia: buku.jumlah_tersedia,
+      foto_buku: null
     };
   } else {
     isEditing.value = false;
     currentBookId.value = null;
-    newBuku.value = { kode_buku: "", judul: "", penulis: "", kategori: "", tempat: "", tahun_buku: "", jumlah_tersedia: 1 };
+    existingFotoUrl.value = null;
+    if (previewFoto.value) URL.revokeObjectURL(previewFoto.value);
+    previewFoto.value = null;
+    newBuku.value = { kode_buku: "", judul: "", penulis: "", kategori: "", tempat: "", tahun_buku: "", jumlah_tersedia: 1, foto_buku: null };
   }
   showBookModal.value = true;
 };
 
-const cancelBook = () => showBookModal.value = false;
+const cancelBook = () => {
+  if (previewFoto.value) URL.revokeObjectURL(previewFoto.value);
+  previewFoto.value = null;
+  showBookModal.value = false;
+};
 
 const saveBook = async () => {
   if (isSavingBook.value) return;
@@ -1036,14 +1077,26 @@ const saveBook = async () => {
   isSavingBook.value = true;
   
   try {
+    const formData = new FormData();
+    Object.keys(newBuku.value).forEach(key => {
+      if (newBuku.value[key] !== null && newBuku.value[key] !== undefined && newBuku.value[key] !== "") {
+        formData.append(key, newBuku.value[key]);
+      }
+    });
+
     if (isEditing.value && currentBookId.value) {
-      await api.put(`/buku/${currentBookId.value}`, newBuku.value);
+      formData.append('_method', 'PUT');
+      await api.post(`/buku/${currentBookId.value}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
       showAlertBox("Data buku berhasil diperbarui!", "success");
     } else {
-      await api.post('/buku', newBuku.value);
+      await api.post('/buku', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
       showAlertBox("Buku berhasil ditambahkan!", "success");
     }
-    showBookModal.value = false;
+    cancelBook();
     await fetchData(); 
   } catch (e) { 
     showAlertBox(e.response?.data?.message || "Gagal menyimpan data buku.", "error"); 

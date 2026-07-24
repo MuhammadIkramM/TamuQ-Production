@@ -39,7 +39,7 @@ class PengajuanSurat extends Model
     public function getFilePendukungUrlAttribute()
     {
         if ($this->file_pendukung) {
-            return url('storage/' . $this->file_pendukung);
+            return url('api/preview-pendukung/' . basename($this->file_pendukung));
         }
         return null;
     }
@@ -47,7 +47,7 @@ class PengajuanSurat extends Model
     public function getFileBalasanUrlAttribute()
     {
         if ($this->file_balasan) {
-            return url('storage/' . $this->file_balasan);
+            return url('api/preview-balasan/' . basename($this->file_balasan));
         }
         return null;
     }

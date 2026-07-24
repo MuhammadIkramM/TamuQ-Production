@@ -160,11 +160,20 @@ class AuthController extends Controller
 
     public function updateProfile(Request $request)
     {
+        $request->merge([
+            'email' => $request->email ?: null,
+        ]);
+
+        $user = $request->user();
+
         $validator = Validator::make($request->all(), [
             'nama_lengkap' => ['nullable', 'string', 'max:255', 'regex:/^[a-zA-Z0-9\s\.\,\-_\']+$/'],
-            'foto' => ['nullable', 'image', 'max:5120'], 
+            'foto' => ['nullable', 'image', 'max:5120'],
+            'email' => ['nullable', 'email', 'max:255', 'unique:users,email,' . $user->id_user . ',id_user'],
         ], [
-            'nama_lengkap.regex' => 'Nama hanya boleh berisi huruf, angka, spasi, titik, koma, garis datar, dan garis bawah.'
+            'nama_lengkap.regex' => 'Nama hanya boleh berisi huruf, angka, spasi, titik, koma, garis datar, dan garis bawah.',
+            'email.email' => 'Masukkan email yang valid.',
+            'email.unique' => 'Email ini sudah digunakan oleh pengguna lain.',
         ]);
 
         if ($validator->fails()) {
@@ -174,10 +183,12 @@ class AuthController extends Controller
             ], 422);
         }
 
-        $user = $request->user();
-
         if ($request->filled('nama_lengkap')) {
             $user->nama_lengkap = $request->nama_lengkap;
+        }
+
+        if ($request->exists('email')) {
+            $user->email = $request->email;
         }
 
         if ($request->hasFile('foto')) {

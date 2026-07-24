@@ -1,6 +1,7 @@
 import axios from 'axios';
 import router from './router';
 import { useAuthStore } from '@/stores/auth';
+import { useProgressStore } from '@/stores/progress';
 
 const api = axios.create({
   baseURL: 'https://tamuq.my.id/api',
@@ -10,9 +11,45 @@ const api = axios.create({
   },
   withCredentials: true
 });
+
+api.interceptors.request.use((config) => {
+  const progressStore = useProgressStore();
+
+  if (config.data instanceof FormData) {
+    const opId = progressStore.addOperation('upload');
+    config._progressOpId = opId;
+
+    if (!config.onUploadProgress) {
+      config.onUploadProgress = (progressEvent) => {
+        if (progressEvent.lengthComputable) {
+          const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          progressStore.updateOperation(opId, percent);
+        }
+      };
+    }
+  }
+
+  if (config.responseType === 'blob') {
+    const actionType = config.actionType || 'download';
+    const type = actionType === 'preview' ? 'preview' : 'download';
+    const opId = progressStore.addOperation(type);
+    config._progressOpId = opId;
+
+    if (!config.onDownloadProgress) {
+      config.onDownloadProgress = (progressEvent) => {
+        if (progressEvent.lengthComputable) {
+          const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          progressStore.updateOperation(opId, percent);
+        }
+      };
+    }
+  }
+
+  return config;
+});
+
 api.interceptors.response.use(
   (response) => {
-    // Detect when backend returns HTML instead of JSON (e.g., catch-all route)
     const contentType = response.headers['content-type'] || '';
     if (contentType.includes('text/html') && !response.config?.responseType) {
       console.error('API returned HTML instead of JSON. URL:', response.config?.url);
@@ -23,9 +60,22 @@ api.interceptors.response.use(
         }
       });
     }
+
+    const progressStore = useProgressStore();
+    const opId = response.config?._progressOpId;
+    if (opId) {
+      progressStore.completeOperation(opId, 'success');
+    }
+
     return response;
   },
   (error) => {
+    const progressStore = useProgressStore();
+    const opId = error.config?._progressOpId;
+    if (opId) {
+      progressStore.completeOperation(opId, 'error');
+    }
+
     const auth = useAuthStore();
 
     if (error.response && error.response.status === 401) {
@@ -39,19 +89,6 @@ api.interceptors.response.use(
 
     if (error.response && error.response.status === 403) {
       console.warn("Akses API ditolak oleh server.");
-
-      const user = auth.user;
-      let isStaff = false;
-      if (user) {
-        const r = user.role ? user.role.toLowerCase() : "";
-        isStaff = ["staff", "superadmin", "admin"].includes(r);
-      }
-
-      if (isStaff) {
-        router.push('/staff/dashboard');
-      } else {
-        router.push('/user/dashboard');
-      }
     }
 
     return Promise.reject(error);

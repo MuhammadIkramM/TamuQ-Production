@@ -29,7 +29,8 @@ class BukuController extends Controller
             'kode_buku.regex' => 'Kode buku hanya boleh berisi huruf, angka, dan garis tengah (-).'
         ]);
 
-        $buku = Buku::create($validator);
+        $dataToSave = collect($validator)->except('foto_buku')->toArray();
+        $buku = Buku::create($dataToSave);
 
         if ($request->hasFile('foto_buku')) {
             $path = $request->file('foto_buku')->store('buku_foto', 'public');
@@ -65,7 +66,8 @@ class BukuController extends Controller
             'kode_buku.regex' => 'Kode buku hanya boleh berisi huruf, angka, dan garis tengah (-).'
         ]);
 
-        $buku->update($validated);
+        $dataToSave = collect($validated)->except('foto_buku')->toArray();
+        $buku->update($dataToSave);
 
         if ($request->hasFile('foto_buku')) {
             if ($buku->foto_buku && Storage::disk('public')->exists($buku->foto_buku)) {

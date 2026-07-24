@@ -230,21 +230,21 @@ class SkripsiController extends Controller
         ]);
     }
 
-    private function checkFileAccess(Request $request, Skripsi $skripsi): ?JsonResponse
+    private function checkFileAccess(Request $request, Skripsi $skripsi, string $type): ?JsonResponse
     {
         $user = $request->user();
         $role = strtolower($user->role ?? '');
         $isStaff = in_array($role, ['staff', 'superadmin']);
 
-        if ($skripsi->status === 'disetujui') {
-            return null; 
-        }
-
-        if ($skripsi->user_id && $skripsi->user_id === $user->id_user) {
-            return null; 
-        }
-
         if ($isStaff) {
+            return null; 
+        }
+
+        if ($skripsi->user_id && (int)$skripsi->user_id === (int)$user->id_user) {
+            return null; 
+        }
+
+        if ($type === 'preview' && $skripsi->status === 'disetujui') {
             return null; 
         }
 
@@ -265,7 +265,7 @@ class SkripsiController extends Controller
             ], 404);
         }
 
-        $denied = $this->checkFileAccess($request, $skripsi);
+        $denied = $this->checkFileAccess($request, $skripsi, 'full');
         if ($denied) return $denied;
 
         if (!$skripsi->file_skripsi || !Storage::disk('local')->exists($skripsi->file_skripsi)) {
@@ -291,7 +291,7 @@ class SkripsiController extends Controller
             ], 404);
         }
 
-        $denied = $this->checkFileAccess($request, $skripsi);
+        $denied = $this->checkFileAccess($request, $skripsi, 'full');
         if ($denied) return $denied;
 
         if (!$skripsi->file_skripsi || !Storage::disk('local')->exists($skripsi->file_skripsi)) {
@@ -317,7 +317,7 @@ class SkripsiController extends Controller
             ], 404);
         }
 
-        $denied = $this->checkFileAccess($request, $skripsi);
+        $denied = $this->checkFileAccess($request, $skripsi, 'preview');
         if ($denied) return $denied;
 
         if (!$skripsi->file_preview_skripsi || !Storage::disk('local')->exists($skripsi->file_preview_skripsi)) {
@@ -343,7 +343,7 @@ class SkripsiController extends Controller
             ], 404);
         }
 
-        $denied = $this->checkFileAccess($request, $skripsi);
+        $denied = $this->checkFileAccess($request, $skripsi, 'preview');
         if ($denied) return $denied;
 
         if (!$skripsi->file_preview_skripsi || !Storage::disk('local')->exists($skripsi->file_preview_skripsi)) {

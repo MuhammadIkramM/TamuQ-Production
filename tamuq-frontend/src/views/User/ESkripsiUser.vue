@@ -148,18 +148,12 @@
           
           <div class="flex gap-2 w-full">
             <button 
-              @click.stop="previewSkripsi(skripsi, 'full')"
+              v-if="skripsi.file_preview_skripsi"
+              @click.stop="previewSkripsi(skripsi, 'preview')"
               class="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-[#00555A]/5 hover:bg-[#00555A]/10 text-[#00555A] rounded-lg text-xs font-bold transition-colors"
             >
               <EyeIcon class="w-4 h-4" />
-              Preview
-            </button>
-            <button 
-              @click.stop="downloadSkripsi(skripsi, 'full')"
-              class="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-[#F26430] hover:bg-[#D65020] text-white rounded-lg text-xs font-bold transition-colors shadow-sm"
-            >
-              <ArrowDownTrayIcon class="w-4 h-4" />
-              Download
+              Preview PDF (Publik)
             </button>
           </div>
         </div>
@@ -241,18 +235,19 @@
 
             <div v-if="riwayat.status === 'disetujui'" class="flex gap-2">
               <button 
+                v-if="riwayat.file_preview_skripsi"
+                @click.stop="previewSkripsi(riwayat, 'preview')"
+                class="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 rounded-lg text-xs font-bold transition-colors shadow-sm"
+              >
+                <EyeIcon class="w-4 h-4" />
+                Preview Publik
+              </button>
+              <button 
                 @click.stop="previewSkripsi(riwayat, 'full')"
                 class="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-[#00555A]/5 hover:bg-[#00555A]/10 text-[#00555A] rounded-lg text-xs font-bold transition-colors"
               >
                 <EyeIcon class="w-4 h-4" />
-                Preview
-              </button>
-              <button 
-                @click.stop="downloadSkripsi(riwayat, 'full')"
-                class="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-[#F26430] hover:bg-[#D65020] text-white rounded-lg text-xs font-bold transition-colors shadow-sm"
-              >
-                <ArrowDownTrayIcon class="w-4 h-4" />
-                Download
+                Preview Full
               </button>
             </div>
           </div>
@@ -391,6 +386,12 @@
               </div>
             </div>
           </div>
+          
+          <div class="px-6 py-3 bg-gray-50 border-t border-gray-100 flex justify-end shrink-0 gap-3">
+             <button @click="downloadSkripsi(previewSkripsiObj, previewType)" class="flex items-center gap-2 px-4 py-2 bg-[#F26430] hover:bg-[#D65020] text-white rounded-lg text-sm font-medium transition shadow-sm">
+                <ArrowDownTrayIcon class="w-4 h-4" /> Unduh Dokumen
+             </button>
+          </div>
         </div>
       </div>
     </transition>
@@ -420,7 +421,6 @@
       :skripsi="selectedDetailSkripsi" 
       @close="showDetailModal = false"
       @preview="(type) => previewSkripsi(selectedDetailSkripsi, type)"
-      @download="(type) => downloadSkripsi(selectedDetailSkripsi, type)"
     />
 
   </div>
@@ -430,6 +430,7 @@
 import { ref, computed, onMounted, watch } from "vue";
 import api from '@/api';
 import { useAuthStore } from '@/stores/auth';
+import { useProgressStore } from '@/stores/progress';
 import DetailSkripsiModal from '@/components/DetailSkripsiModal.vue';
 import { 
   AcademicCapIcon, DocumentTextIcon, MagnifyingGlassIcon, CalendarDaysIcon,
@@ -480,6 +481,8 @@ const previewUrl = ref(null);
 const previewTitle = ref("");
 const previewLoading = ref(false);
 const previewError = ref(false);
+const previewType = ref('full');
+const previewSkripsiObj = ref(null);
 
 const showAlert = (type, title, message) => {
   alert.value = { show: true, type, title, message };
@@ -689,8 +692,17 @@ const submitPengajuan = async () => {
     }
 };
 
+let previewAbortController = null;
+
 const previewSkripsi = async (skripsi, type = 'full') => {
+    if (previewAbortController) {
+        previewAbortController.abort();
+    }
+    previewAbortController = new AbortController();
+
     previewTitle.value = skripsi.judul;
+    previewType.value = type;
+    previewSkripsiObj.value = skripsi;
     previewLoading.value = true;
     previewError.value = false;
     previewUrl.value = null;
@@ -701,12 +713,23 @@ const previewSkripsi = async (skripsi, type = 'full') => {
             ? `/skripsi/${skripsi.id_skripsi}/preview` 
             : `/skripsi/${skripsi.id_skripsi}/preview-file`;
         await api.get(endpoint, {
-            responseType: 'blob'
+            responseType: 'blob',
+            actionType: 'preview',
+            signal: previewAbortController.signal
         });
         previewUrl.value = `${api.defaults.baseURL}${endpoint}`;
     } catch (e) {
-        console.error('Preview error:', e);
-        previewError.value = true;
+        if (e.message === 'canceled' || e.code === 'ERR_CANCELED') {
+            console.log('Preview fetch canceled');
+        } else if (e.response && e.response.status === 403) {
+            console.error('Preview error 403:', e);
+            previewError.value = true;
+            showAlert('error', 'Akses Ditolak', 'Anda tidak memiliki akses ke file ini.');
+            showPreviewModal.value = false;
+        } else {
+            console.error('Preview error:', e);
+            previewError.value = true;
+        }
     } finally {
         previewLoading.value = false;
     }
@@ -717,6 +740,14 @@ const closePreview = () => {
     previewUrl.value = null;
     previewTitle.value = "";
     previewError.value = false;
+
+    if (previewAbortController) {
+        previewAbortController.abort();
+        previewAbortController = null;
+    }
+
+    const progressStore = useProgressStore();
+    progressStore.stopAllByType('preview');
 };
 
 const downloadSkripsi = async (skripsi, type = 'full') => {
@@ -725,7 +756,8 @@ const downloadSkripsi = async (skripsi, type = 'full') => {
             ? `/skripsi/${skripsi.id_skripsi}/download` 
             : `/skripsi/${skripsi.id_skripsi}/download-file`;
         const response = await api.get(endpoint, {
-            responseType: 'blob'
+            responseType: 'blob',
+            actionType: 'download'
         });
         
         const blob = new Blob([response.data], { type: 'application/pdf' });
@@ -742,8 +774,13 @@ const downloadSkripsi = async (skripsi, type = 'full') => {
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
     } catch (error) {
-        console.error('Download error:', error);
-        alert('Gagal mengunduh file skripsi. File mungkin tidak tersedia.');
+        if (error.response && error.response.status === 403) {
+            console.error('Download error 403:', error);
+            showAlert('error', 'Akses Ditolak', 'Anda tidak memiliki akses untuk mengunduh file ini.');
+        } else {
+            console.error('Download error:', error);
+            alert('Gagal mengunduh file skripsi. File mungkin tidak tersedia.');
+        }
     }
 };
 

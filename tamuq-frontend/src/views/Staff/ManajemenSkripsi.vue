@@ -438,7 +438,6 @@
       :skripsi="selectedDetailSkripsi" 
       @close="showDetailModal = false"
       @preview="(type) => previewSkripsi(selectedDetailSkripsi, type)"
-      @download="(type) => downloadSkripsi(selectedDetailSkripsi, type)"
     />
 
   </div>
@@ -447,6 +446,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted, watch } from 'vue';
 import api from '@/api';
+import { useProgressStore } from '@/stores/progress';
 import DetailSkripsiModal from '@/components/DetailSkripsiModal.vue';
 import { 
   AcademicCapIcon, PlusIcon, DocumentTextIcon, MagnifyingGlassIcon, PencilSquareIcon,
@@ -776,8 +776,15 @@ const submitTolak = async () => {
     }
 };
 
+let previewAbortController = null;
+
 const previewSkripsi = async (skripsi, type) => {
   previewTitle.value = skripsi.judul;
+  if (previewAbortController) {
+    previewAbortController.abort();
+  }
+  previewAbortController = new AbortController();
+
   previewType.value = type;
   previewLoading.value = true;
   previewError.value = false;
@@ -790,11 +797,24 @@ const previewSkripsi = async (skripsi, type) => {
         ? `/skripsi/${skripsi.id_skripsi}/preview` 
         : `/skripsi/${skripsi.id_skripsi}/preview-file`;
         
-    await api.get(endpoint, { responseType: 'blob' });
+    await api.get(endpoint, { 
+      responseType: 'blob',
+      actionType: 'preview',
+      signal: previewAbortController.signal
+    });
     previewUrl.value = `${api.defaults.baseURL}${endpoint}`;
   } catch (e) {
-    console.error('Preview error:', e);
-    previewError.value = true;
+    if (e.message === 'canceled' || e.code === 'ERR_CANCELED') {
+      console.log('Preview fetch canceled');
+    } else if (e.response && e.response.status === 403) {
+      console.error('Preview error 403:', e);
+      previewError.value = true;
+      showAlertBox('Anda tidak memiliki akses ke file ini.', 'error');
+      showPreviewModal.value = false;
+    } else {
+      console.error('Preview error:', e);
+      previewError.value = true;
+    }
   } finally {
     previewLoading.value = false;
   }
@@ -806,6 +826,14 @@ const closePreview = () => {
   previewTitle.value = '';
   previewError.value = false;
   previewSkripsiObj.value = null;
+
+  if (previewAbortController) {
+    previewAbortController.abort();
+    previewAbortController = null;
+  }
+
+  const progressStore = useProgressStore();
+  progressStore.stopAllByType('preview');
 };
 
 const downloadSkripsi = async (skripsi, type) => {
@@ -814,7 +842,10 @@ const downloadSkripsi = async (skripsi, type) => {
             ? `/skripsi/${skripsi.id_skripsi}/download` 
             : `/skripsi/${skripsi.id_skripsi}/download-file`;
             
-        const response = await api.get(endpoint, { responseType: 'blob' });
+        const response = await api.get(endpoint, { 
+            responseType: 'blob',
+            actionType: 'download'
+        });
         
         const blob = new Blob([response.data], { type: 'application/pdf' });
         const url = window.URL.createObjectURL(blob);
@@ -831,8 +862,13 @@ const downloadSkripsi = async (skripsi, type) => {
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
     } catch (error) {
-        console.error('Download error:', error);
-        showAlertBox('Gagal mengunduh file. File mungkin tidak tersedia.', 'error');
+        if (error.response && error.response.status === 403) {
+            console.error('Download error 403:', error);
+            showAlertBox('Anda tidak memiliki akses untuk mengunduh file ini.', 'error');
+        } else {
+            console.error('Download error:', error);
+            showAlertBox('Gagal mengunduh file. File mungkin tidak tersedia.', 'error');
+        }
     }
 };
 </script>

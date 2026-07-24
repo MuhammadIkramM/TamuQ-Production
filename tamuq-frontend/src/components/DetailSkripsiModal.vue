@@ -72,19 +72,13 @@
 
         <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex flex-col sm:flex-row gap-3 shrink-0 justify-end">
           <div class="flex flex-wrap gap-2 w-full sm:w-auto">
-            <button @click="$emit('preview', 'preview')" class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 rounded-lg text-sm font-medium transition shadow-sm">
+            <button v-if="skripsi?.file_preview_skripsi" @click="$emit('preview', 'preview')" class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 rounded-lg text-sm font-medium transition shadow-sm">
               <EyeIcon class="w-4 h-4" /> Preview PDF (Publik)
             </button>
-            <button @click="$emit('download', 'preview')" class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 rounded-lg text-sm font-medium transition shadow-sm">
-              <ArrowDownTrayIcon class="w-4 h-4" /> Download (Publik)
-            </button>
           </div>
-          <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+          <div v-if="canAccessFull" class="flex flex-wrap gap-2 w-full sm:w-auto">
             <button @click="$emit('preview', 'full')" class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-[#00555A]/10 text-[#00555A] hover:bg-[#00555A]/20 rounded-lg text-sm font-bold transition shadow-sm">
               <EyeIcon class="w-4 h-4" /> Preview Full
-            </button>
-            <button @click="$emit('download', 'full')" class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-[#F26430] text-white hover:bg-[#D65020] rounded-lg text-sm font-bold transition shadow-sm">
-              <ArrowDownTrayIcon class="w-4 h-4" /> Download Full
             </button>
           </div>
         </div>
@@ -95,9 +89,11 @@
 </template>
 
 <script setup>
+import { computed } from 'vue';
+import { useAuthStore } from '@/stores/auth';
 import { 
   DocumentTextIcon, XMarkIcon, CalendarDaysIcon, ClockIcon, 
-  ChatBubbleBottomCenterTextIcon, EyeIcon, ArrowDownTrayIcon 
+  ChatBubbleBottomCenterTextIcon, EyeIcon 
 } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
@@ -105,7 +101,12 @@ const props = defineProps({
   skripsi: Object
 });
 
-defineEmits(['close', 'preview', 'download']);
+defineEmits(['close', 'preview']);
+
+const authStore = useAuthStore();
+const canAccessFull = computed(() => {
+  return authStore.isStaffOrAdmin || (authStore.user && Number(props.skripsi?.user_id) === Number(authStore.user.id_user));
+});
 
 const formatDate = (dateStr) => {
   if (!dateStr) return '-';

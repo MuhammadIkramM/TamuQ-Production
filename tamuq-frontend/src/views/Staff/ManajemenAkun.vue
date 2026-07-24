@@ -184,12 +184,12 @@
 
               <div class="space-y-1.5">
                 <label class="text-xs font-bold text-[#00555A]/70 uppercase tracking-wide">Nama Lengkap</label>
-                <input type="text" v-model="formData.nama_lengkap" class="w-full px-4 py-2.5 bg-[#EBF2FA]/30 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#F26430] focus:border-[#F26430] text-sm outline-none transition text-[#00555A]" placeholder="Contoh: Ahmad Fadli" />
+                <input type="text" v-model="formData.nama_lengkap" class="w-full px-4 py-2.5 bg-[#EBF2FA]/30 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#F26430] focus:border-[#F26430] text-sm outline-none transition text-[#00555A]" placeholder="Contoh: Muhammad Ikram Muslimin" />
               </div>
 
               <div class="space-y-1.5">
                 <label class="text-xs font-bold text-[#00555A]/70 uppercase tracking-wide">Email</label>
-                <input type="email" v-model="formData.email" class="w-full px-4 py-2.5 bg-[#EBF2FA]/30 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#F26430] focus:border-[#F26430] text-sm outline-none transition text-[#00555A]" placeholder="Contoh: ahmad@student.undiksha.ac.id" />
+                <input type="email" v-model="formData.email" class="w-full px-4 py-2.5 bg-[#EBF2FA]/30 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#F26430] focus:border-[#F26430] text-sm outline-none transition text-[#00555A]" placeholder="Contoh: ikram@unm.ac.id" />
               </div>
 
               <div class="grid grid-cols-2 gap-5">
