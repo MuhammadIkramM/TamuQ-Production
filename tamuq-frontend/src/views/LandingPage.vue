@@ -32,6 +32,7 @@
 
     <section id="beranda" class="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <PengumumanStack class="mb-8" />
         <div class="grid lg:grid-cols-2 gap-12 items-center">
           
           <div class="text-center lg:text-left space-y-6">
@@ -318,6 +319,8 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
+import PengumumanStack from '@/components/PengumumanStack.vue';
+import api from '@/api';
 
 import orang1Img from '@/assets/orang1.png';
 import orang2Img from '@/assets/orang2.png';
@@ -335,18 +338,18 @@ const handleScroll = () => { isScrolled.value = window.scrollY > 50; };
 
 const isVideoPlaying = ref(false);
 
-const heroImages = [pic1, pic2, pic3, pic4];
+const heroImages = ref([pic1, pic2, pic3, pic4]);
 
 const currentHeroIndex = ref(0);
 let heroInterval;
 
 const nextHeroSlide = () => {
-  currentHeroIndex.value = (currentHeroIndex.value + 1) % heroImages.length;
+  currentHeroIndex.value = (currentHeroIndex.value + 1) % heroImages.value.length;
 };
 
 const prevHeroSlide = () => {
   currentHeroIndex.value = currentHeroIndex.value === 0 
-    ? heroImages.length - 1 
+    ? heroImages.value.length - 1 
     : currentHeroIndex.value - 1;
 };
 
@@ -418,8 +421,50 @@ const toggleFaq = (index) => {
   faqs.value[index].open = !faqs.value[index].open;
 };
 
+const BASE_STORAGE_URL = import.meta.env.VITE_STORAGE_URL || "https://tamuq.my.id/storage/";
+
+const resolveImageUrl = (path) => {
+  if (!path) return null;
+  if (path.startsWith('http')) return path;
+  const normalizedBase = BASE_STORAGE_URL.endsWith('/') ? BASE_STORAGE_URL : BASE_STORAGE_URL + '/';
+  return `${normalizedBase}${path.replace(/^\//, '')}`;
+};
+
+const fetchHeroImages = async () => {
+  try {
+    const res = await api.get('/landing/hero');
+    const data = res.data.data || [];
+    if (data.length > 0) {
+      heroImages.value = data.map(item => resolveImageUrl(item.gambar));
+      currentHeroIndex.value = 0;
+    }
+  } catch (error) {
+    console.error('Gagal memuat hero images, menampilkan gambar default:', error);
+  }
+};
+
+const fetchTestimonials = async () => {
+  try {
+    const res = await api.get('/landing/testimoni');
+    const data = res.data.data || [];
+    if (data.length > 0) {
+      testimonials.value = data.map(item => ({
+        name: item.nama,
+        role: item.jabatan || '',
+        image: item.foto ? resolveImageUrl(item.foto) : `https://ui-avatars.com/api/?name=${encodeURIComponent(item.nama)}&background=00555A&color=fff&bold=true`,
+        quote: item.kutipan
+      }));
+      currentTestimonialIndex.value = 0;
+    }
+  } catch (error) {
+    console.error('Gagal memuat testimoni, menampilkan testimoni default:', error);
+  }
+};
+
 onMounted(() => {
   window.addEventListener('scroll', handleScroll);
+  fetchHeroImages();
+  fetchTestimonials();
   startHeroSlide(); 
 });
 

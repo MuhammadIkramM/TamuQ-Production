@@ -144,7 +144,7 @@ import { useRouter, useRoute } from "vue-router";
 import api from "@/api";
 import { useAuthStore } from '@/stores/auth';
 import { 
-  Bars3BottomRightIcon, XMarkIcon, HomeIcon, QrCodeIcon, ClockIcon, 
+  Bars3BottomRightIcon, XMarkIcon, HomeIcon, BellIcon, ClockIcon, 
   DocumentTextIcon, GiftIcon, BookOpenIcon, Cog6ToothIcon, 
   ArrowRightOnRectangleIcon, ChevronRightIcon, AcademicCapIcon
 } from "@heroicons/vue/24/outline";
@@ -159,7 +159,7 @@ const user = ref(auth.user || {});
 
 const menuItems = [
   { name: "Beranda", path: "/user/dashboard", icon: HomeIcon },
-  { name: "QR Code", path: "/user/qr", icon: QrCodeIcon },
+  { name: "Notifikasi", path: "/user/notifikasi", icon: BellIcon },
   { name: "Riwayat Kunjungan", path: "/user/riwayat", icon: ClockIcon },
   { name: "Surat Bebas Perpustakaan", path: "/user/surat-bebas", icon: DocumentTextIcon },
   { name: "Surat Donasi Buku", path: "/user/donasi", icon: GiftIcon },

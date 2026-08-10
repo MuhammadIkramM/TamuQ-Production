@@ -188,7 +188,7 @@ import {
   HomeIcon, QrCodeIcon, DocumentTextIcon, UserGroupIcon, 
   BookOpenIcon, CogIcon, UserIcon, ArrowRightOnRectangleIcon,
   Bars3Icon, Bars3BottomLeftIcon, ExclamationTriangleIcon,
-  AcademicCapIcon
+  AcademicCapIcon, MegaphoneIcon, PhotoIcon
 } from "@heroicons/vue/24/outline"; 
 
 const router = useRouter();
@@ -219,6 +219,8 @@ const allMenuItems = [
   { name: "Daftar Pengajuan", path: "/staff/pengajuan-surat", icon: DocumentTextIcon },
   { name: "Manajemen Buku", path: "/staff/manajemen-buku", icon: BookOpenIcon },
   { name: "Manajemen E-Skripsi", path: "/staff/manajemen-skripsi", icon: AcademicCapIcon },
+  { name: "Manajemen Pengumuman", path: "/staff/manajemen-pengumuman", icon: MegaphoneIcon },
+  { name: "Manajemen Landing Page", path: "/staff/manajemen-landing", icon: PhotoIcon },
   { name: "Manajemen Akun", path: "/staff/manajemen-akun", icon: UserIcon },
   { name: "Pengaturan", path: "/staff/pengaturan", icon: CogIcon },
 ];
