@@ -140,6 +140,54 @@ return new class extends Migration
             $table->foreign('user_id')->references('id_user')->on('users')->onDelete('set null');
         });
 
+        Schema::create('pengumuman', function (Blueprint $table) {
+            $table->id();
+            $table->string('judul', 150);
+            $table->text('isi_pesan');
+            $table->enum('tipe', ['info', 'penting', 'darurat'])->default('info');
+            $table->enum('target', ['semua', 'pengunjung', 'staff', 'individu'])->default('semua');
+            $table->enum('status', ['aktif', 'nonaktif'])->default('aktif');
+            $table->dateTime('tanggal_mulai')->useCurrent();
+            $table->dateTime('tanggal_berakhir')->nullable();
+            $table->integer('dibuat_oleh')->nullable();
+            $table->timestamps();
+
+            $table->foreign('dibuat_oleh')->references('id_user')->on('users')->onDelete('set null');
+            $table->index(['status', 'tanggal_mulai', 'tanggal_berakhir'], 'idx_pengumuman_aktif');
+        });
+
+        Schema::create('pengumuman_penerima', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('pengumuman_id');
+            $table->integer('user_id');
+            $table->boolean('dibaca')->default(false);
+            $table->timestamps();
+
+            $table->foreign('pengumuman_id')->references('id')->on('pengumuman')->onDelete('cascade');
+            $table->foreign('user_id')->references('id_user')->on('users')->onDelete('cascade');
+
+            $table->unique(['pengumuman_id', 'user_id']);
+        });
+
+        Schema::create('landing_hero', function (Blueprint $table) {
+            $table->id();
+            $table->string('gambar', 255);
+            $table->integer('urutan')->default(0);
+            $table->enum('status', ['aktif', 'nonaktif'])->default('aktif');
+            $table->timestamps();
+        });
+
+        Schema::create('landing_testimoni', function (Blueprint $table) {
+            $table->id();
+            $table->string('foto', 255)->nullable();
+            $table->string('nama', 100);
+            $table->string('jabatan', 100)->nullable();
+            $table->text('kutipan');
+            $table->integer('urutan')->default(0);
+            $table->enum('status', ['aktif', 'nonaktif'])->default('aktif');
+            $table->timestamps();
+        });
+
         Schema::create('settings', function (Blueprint $table) {
             $table->string('key')->primary();
             $table->string('value');
@@ -166,6 +214,8 @@ return new class extends Migration
     {
         Schema::dropIfExists('cache');
         Schema::dropIfExists('sessions');
+        Schema::dropIfExists('landing_testimoni');
+        Schema::dropIfExists('landing_hero');
         Schema::dropIfExists('settings');
         Schema::dropIfExists('skripsi');
         Schema::dropIfExists('pengajuan_surats');
@@ -175,6 +225,8 @@ return new class extends Migration
         Schema::dropIfExists('kunjungan');
         Schema::dropIfExists('qr_tokens');
         Schema::dropIfExists('personal_access_tokens');
+        Schema::dropIfExists('pengumuman_penerima');
+        Schema::dropIfExists('pengumuman');
         Schema::dropIfExists('users');
     }
 };
