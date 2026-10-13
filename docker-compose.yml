@@ -1,0 +1,51 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: tamuq-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: tamuq
+      MYSQL_USER: tamuq
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: rootsecret
+    ports:
+      - "3306:3306"
+    volumes:
+      - dbdata:/var/lib/mysql
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: tamuq-pma
+    restart: unless-stopped
+    environment:
+      PMA_HOST: db
+      UPLOAD_LIMIT: 100M
+    ports:
+      - "8081:80"
+    depends_on:
+      - db
+
+  backend:
+    build: ./tamuq-backend
+    container_name: tamuq-backend
+    working_dir: /var/www/html
+    command: php artisan serve --host=0.0.0.0 --port=8000
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./tamuq-backend:/var/www/html
+    depends_on:
+      - db
+
+  frontend:
+    image: node:22
+    container_name: tamuq-frontend
+    working_dir: /app
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./tamuq-frontend:/app
+
+volumes:
+  dbdata:

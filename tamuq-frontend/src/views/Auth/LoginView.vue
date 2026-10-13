@@ -23,7 +23,7 @@ const handleLogin = async (formData) => {
   errorMessage.value = '';
 
   try {
-    await api.get('https://tamuq.my.id/sanctum/csrf-cookie');
+    await api.get(`${import.meta.env.VITE_API_BASE_URL || 'https://tamuq.my.id'}/sanctum/csrf-cookie`);
 
     const response = await api.post('/login', formData);
 

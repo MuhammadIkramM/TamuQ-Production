@@ -4,7 +4,7 @@ import { useAuthStore } from '@/stores/auth';
 import { useProgressStore } from '@/stores/progress';
 
 const api = axios.create({
-  baseURL: 'https://tamuq.my.id/api',
+  baseURL: `${import.meta.env.VITE_API_BASE_URL || 'https://tamuq.my.id'}/api`,
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json' 
