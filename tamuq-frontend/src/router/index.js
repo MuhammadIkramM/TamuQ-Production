@@ -37,6 +37,7 @@ const router = createRouter({
       meta: { requiresAuth: true, roles: ["pengunjung"] },
       children: [
         { path: "dashboard", name: "DashboardUser", component: () => import("@/views/User/DashboardUser.vue") },
+        { path: "notifikasi", name: "NotifikasiUser", component: () => import("@/views/User/NotifikasiUser.vue") },
         { path: "qr", name: "QRCodeUser", component: () => import("@/views/User/QRCodeUser.vue") },
         { path: "riwayat", name: "RiwayatKunjunganUser", component: () => import("@/views/User/RiwayatKunjunganUser.vue") },
         { path: "surat-bebas", name: "PengajuanSuratBebasUser", component: () => import("@/views/User/PengajuanSuratBebasUser.vue") },
@@ -86,6 +87,18 @@ const router = createRouter({
           path: "manajemen-skripsi",
           name: "ManajemenSkripsi",
           component: () => import("@/views/Staff/ManajemenSkripsi.vue"),
+          meta: { roles: ['staff', 'superadmin', 'super_admin', 'admin'] }
+        },
+        {
+          path: "manajemen-pengumuman",
+          name: "ManajemenPengumuman",
+          component: () => import("@/views/Staff/ManajemenPengumuman.vue"),
+          meta: { roles: ['staff', 'superadmin', 'super_admin', 'admin'] }
+        },
+        {
+          path: "manajemen-landing",
+          name: "ManajemenLandingPage",
+          component: () => import("@/views/Staff/ManajemenLandingPage.vue"),
           meta: { roles: ['staff', 'superadmin', 'super_admin', 'admin'] }
         },
         {

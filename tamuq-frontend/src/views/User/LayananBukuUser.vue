@@ -103,7 +103,7 @@
           <div class="relative h-44 bg-gray-50 overflow-hidden">
             <img 
               v-if="buku.foto_buku" 
-              :src="'https://tamuq.my.id/storage/' + buku.foto_buku" 
+              :src="fotoBukuUrl(buku.foto_buku)" 
               :alt="buku.judul"
               class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               loading="lazy"
@@ -381,6 +381,9 @@ import {
   MagnifyingGlassIcon, ClockIcon, QrCodeIcon, ArrowPathIcon, LightBulbIcon, XMarkIcon
 } from "@heroicons/vue/24/outline";
 import { Square3Stack3DIcon, FunnelIcon } from "@heroicons/vue/24/solid";
+
+const storageBase = (import.meta.env.VITE_STORAGE_URL || 'https://tamuq.my.id/storage').replace(/\/$/, '');
+const fotoBukuUrl = (path) => (path ? `${storageBase}/${path}` : null);
 
 const peminjamanAktif = ref([]);
 const riwayatPengembalian = ref([]);

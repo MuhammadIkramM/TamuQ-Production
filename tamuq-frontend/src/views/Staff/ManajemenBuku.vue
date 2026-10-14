@@ -125,7 +125,7 @@
               <td class="px-3 py-3 text-center">
                   <img 
                     v-if="buku.foto_buku" 
-                    :src="'https://tamuq.my.id/storage/' + buku.foto_buku" 
+                    :src="fotoBukuUrl(buku.foto_buku)" 
                     alt="Foto Buku"
                     class="w-10 h-14 object-cover rounded border border-gray-200 mx-auto"
                   />
@@ -733,6 +733,9 @@ import {
   QrCodeIcon, UserIcon
 } from "@heroicons/vue/24/outline";
 
+const storageBase = (import.meta.env.VITE_STORAGE_URL || 'https://tamuq.my.id/storage').replace(/\/$/, '');
+const fotoBukuUrl = (path) => (path ? `${storageBase}/${path}` : null);
+
 setZXingModuleOverrides({
   locateFile: (path, prefix) => {
     if (path.endsWith('.wasm')) {
@@ -1040,7 +1043,7 @@ const openBookModal = (mode, buku = null) => {
   if (mode === 'edit' && buku) {
     isEditing.value = true;
     currentBookId.value = buku.id_buku;
-    existingFotoUrl.value = buku.foto_buku ? ('https://tamuq.my.id/storage/' + buku.foto_buku) : null;
+    existingFotoUrl.value = fotoBukuUrl(buku.foto_buku);
     if (previewFoto.value) URL.revokeObjectURL(previewFoto.value);
     previewFoto.value = null;
 

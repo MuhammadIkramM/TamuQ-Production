@@ -1,6 +1,8 @@
 <template>
   <div class="max-w-3xl mx-auto space-y-6">
     
+    <PengumumanStack />
+
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
       <div>
         <h1 class="text-3xl font-extrabold text-[#00555A] flex items-center gap-2">
@@ -79,9 +81,31 @@
               </span>
             </div>
           </div>
+
+          <button
+            @click="showQrModal = true"
+            class="md:hidden mx-auto mt-5 flex flex-col items-center gap-1.5 active:scale-95 transition-all"
+            title="Tampilkan QR Code"
+          >
+            <span class="w-16 h-16 flex items-center justify-center rounded-2xl bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20">
+              <QrCodeIcon class="w-8 h-8 text-white" />
+            </span>
+            <span class="text-xs font-semibold text-teal-100">Tampilkan QR Code</span>
+          </button>
         </div>
+
+        <button
+          @click="showQrModal = true"
+          class="hidden md:flex md:flex-col md:items-center md:justify-center self-stretch w-24 lg:w-28 shrink-0 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 rounded-2xl transition-all active:scale-95 gap-2"
+          title="Tampilkan QR Code"
+        >
+          <QrCodeIcon class="w-10 h-10 text-white" />
+          <span class="text-[11px] font-semibold text-teal-100 text-center px-2 leading-tight">Tampilkan QR</span>
+        </button>
       </div>
     </div>
+
+    <QrCodeModal :show="showQrModal" @close="showQrModal = false" />
   </div>
 </template>
 
@@ -89,10 +113,14 @@
 import { ref, onMounted, onUnmounted, computed } from "vue";
 import api from '@/api';
 import { useAuthStore } from '@/stores/auth';
+import { QrCodeIcon } from '@heroicons/vue/24/outline';
+import QrCodeModal from '@/components/QrCodeModal.vue';
+import PengumumanStack from '@/components/PengumumanStack.vue';
 
 const auth = useAuthStore();
 const user = ref({ nama_lengkap: '', nomor_induk: '', prodi: '', status_akun: '', foto_profil: null });
 const isLoading = ref(true);
+const showQrModal = ref(false);
 const isLibraryOpen = ref(false); 
 
 const firstName = computed(() => user.value.nama_lengkap ? user.value.nama_lengkap.split(" ")[0] : "...");

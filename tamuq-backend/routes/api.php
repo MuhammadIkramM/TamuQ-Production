@@ -11,9 +11,14 @@ use App\Http\Controllers\PeminjamanController;
 use App\Http\Controllers\BukuController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Api\SkripsiController;
+use App\Http\Controllers\Api\PengumumanController;
+use App\Http\Controllers\Api\LandingContentController;
 
 Route::post('/login', [AuthController::class, 'login'])->name('login');
 Route::post('/register', [AuthController::class, 'register']);
+Route::get('/pengumuman/aktif', [PengumumanController::class, 'aktif']);
+Route::get('/landing/hero', [LandingContentController::class, 'heroPublic']);
+Route::get('/landing/testimoni', [LandingContentController::class, 'testimoniPublic']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -22,6 +27,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/user/update-password', [AuthController::class, 'updatePassword']);
     Route::get('/library-status', [DashboardController::class, 'checkStatus']);
     Route::get('/qr/generate', [QrCodeController::class, 'generate']);
+    Route::get('/notifikasi-saya', [PengumumanController::class, 'notifikasiSaya']);
+    Route::post('/notifikasi/{id}/tandai-dibaca', [PengumumanController::class, 'tandaiDibaca']);
     Route::get('/kunjungan/history', [VisitController::class, 'getHistory']);
     Route::post('/pengajuan', [PengajuanSuratController::class, 'store'])->middleware('throttle:30,1');
     Route::get('/pengajuan', [PengajuanSuratController::class, 'index']);
@@ -60,6 +67,24 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/staff/peminjaman', [PeminjamanController::class, 'store']);
         Route::post('/staff/peminjaman/{id}/return', [PeminjamanController::class, 'returnBook']);
         Route::post('/staff/peminjaman/scan-user', [PeminjamanController::class, 'scanUser']);
+        Route::get('/staff/pengumuman', [PengumumanController::class, 'index']);
+        Route::get('/staff/pengumuman/cari-user', [PengumumanController::class, 'cariUser']);
+        Route::post('/staff/pengumuman', [PengumumanController::class, 'store'])->middleware('throttle:30,1');
+        Route::put('/staff/pengumuman/{id}', [PengumumanController::class, 'update'])->middleware('throttle:30,1');
+        Route::post('/staff/pengumuman/{id}/toggle', [PengumumanController::class, 'toggleStatus'])->middleware('throttle:30,1');
+        Route::delete('/staff/pengumuman/{id}', [PengumumanController::class, 'destroy'])->middleware('throttle:30,1');
+        Route::get('/staff/landing/hero', [LandingContentController::class, 'heroIndex']);
+        Route::post('/staff/landing/hero', [LandingContentController::class, 'heroStore'])->middleware('throttle:30,1');
+        Route::post('/staff/landing/hero/reorder', [LandingContentController::class, 'heroReorder'])->middleware('throttle:60,1');
+        Route::post('/staff/landing/hero/{id}', [LandingContentController::class, 'heroUpdate'])->middleware('throttle:30,1');
+        Route::post('/staff/landing/hero/{id}/toggle', [LandingContentController::class, 'heroToggle'])->middleware('throttle:30,1');
+        Route::delete('/staff/landing/hero/{id}', [LandingContentController::class, 'heroDestroy'])->middleware('throttle:30,1');
+        Route::get('/staff/landing/testimoni', [LandingContentController::class, 'testimoniIndex']);
+        Route::post('/staff/landing/testimoni', [LandingContentController::class, 'testimoniStore'])->middleware('throttle:30,1');
+        Route::post('/staff/landing/testimoni/reorder', [LandingContentController::class, 'testimoniReorder'])->middleware('throttle:60,1');
+        Route::post('/staff/landing/testimoni/{id}', [LandingContentController::class, 'testimoniUpdate'])->middleware('throttle:30,1');
+        Route::post('/staff/landing/testimoni/{id}/toggle', [LandingContentController::class, 'testimoniToggle'])->middleware('throttle:30,1');
+        Route::delete('/staff/landing/testimoni/{id}', [LandingContentController::class, 'testimoniDestroy'])->middleware('throttle:30,1');
     });
 
     Route::middleware('role:superadmin')->group(function () {

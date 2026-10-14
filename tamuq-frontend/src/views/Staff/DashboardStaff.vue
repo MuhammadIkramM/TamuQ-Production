@@ -1,6 +1,8 @@
 <template>
   <div class="space-y-8">
     
+    <PengumumanStack />
+
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
       <div>
         <h1 class="text-3xl font-bold text-[#00555A] tracking-tight">Dashboard Overview</h1>
@@ -194,6 +196,7 @@
 <script setup>
 import { defineAsyncComponent, ref, onMounted, watch } from "vue";
 import api from "@/api";
+import PengumumanStack from "@/components/PengumumanStack.vue";
 import { Chart as ChartJS, Filler } from 'chart.js';
 ChartJS.register(Filler);
 import { 
